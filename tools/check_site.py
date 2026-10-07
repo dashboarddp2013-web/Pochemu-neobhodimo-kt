@@ -17,13 +17,17 @@
   4. пункты меню и кнопки ведут на заглушки §7; все ссылки — только якоря,
      ни одного адреса мессенджеров; в начале файла — комментарий «ЗАМЕНИТЬ»;
   5. все 9 id секций на месте и в нужном порядке; ровно один h1; у секций есть h2.
-Плюс: lang="ru", шрифт Manrope подключён строкой из interfaces.md, нет style=""
-(кроме aspect-ratio); в style.css у кнопок .btn скругление var(--radius-btn) = 12px
-на всех ширинах, у карточек и ячеек углы прямые (G02); в секциях 4 и 6 под сеткой
-иллюстраций нет пустой полосы (G01, таск F2): по числам style.css и размерам картинок
+Плюс: lang="ru", нет style="" (кроме aspect-ratio); в style.css у кнопок .btn скругление
+var(--radius-btn) = 12px на всех ширинах, у карточек и ячеек углы прямые (G02); в секциях 4 и 6
+под сеткой иллюстраций нет пустой полосы (G01, таск F2): по числам style.css и размерам картинок
 высота сетки равна высоте списка на десктопе, а на планшете список и сетка
 переносятся друг под друга и строки списка растягиваются до высоты сетки;
 в первом экране нет вертикальных линий — ни разметки, ни стилей (G03, таск F3).
+Таск F4: весь сайт набран Inter (G05) — Google Fonts подключён ровно строкой из interfaces.md,
+в style.css нет других шрифтов, кроме Inter и запасных, заголовки и бейджи — 800 и −0,01em,
+README называет Inter; на телефоне (320–767) сетки картинок секций 4 и 6, карточки и кнопки CTA
+доходят до правого края контента, сетки — полными рядами по 2, от ~560 px — по 3 (G04):
+по числам style.css ширина колонок вычисляется для каждой ширины экрана.
 
 Эталон текстов ищется, а не прописан: первая по имени .autopilot/*/design/frame1-desktop.json
 (папку прогона можно переименовать). Служебной папки .autopilot нет в публичном репозитории —
@@ -68,7 +72,21 @@ BUTTON_STUBS = ["#video", "#vopros", "#telegram", "#whatsapp", "#max"]
 ALL_STUBS = MENU_STUBS + BUTTON_STUBS
 MENU_TEXTS = ["Услуги", "Цены", "Команда", "Акции", "Отзывы", "Пациентам", "Контакты"]
 
-FONT_HREF = "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700&display=swap"
+README = ROOT / "README.md"
+
+# G05 (таск F4): строка подключения — из interfaces.md; других шрифтов на сайте нет.
+FONT_HREF = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap"
+FONT_NAME = "Inter"
+FONT_FALLBACKS = ("arial", "sans-serif")
+# H1, H2, H3 и бейджи «50 / мкЗв»: вес 800, межбуквенный −0,01em.
+HEADING_SELECTORS = (".hero__title", ".h2", ".card__title", ".compare__title", ".card__badge")
+HEADING_WEIGHT = "800"
+HEADING_TRACKING = "-0.01em"
+
+# G04 (таск F4): ширины телефона, на которых ряды доходят до правого края контента (±1 px).
+PHONE_WIDTHS = (320, 380, 480, 600, 700, 767)
+EDGE_TOLERANCE = 1
+FACTS_THREE_FROM = 560  # px экрана: уже — сетка 6 картинок по 2 в ряд, шире — по 3
 FORBIDDEN_HOSTS = re.compile(
     r"(t\.me|telegram\.(me|org|dog)|wa\.me|whatsapp\.com|max\.ru|vk\.com|instagram\.com|ok\.ru)",
     re.I,
@@ -327,9 +345,7 @@ def main():
     h1 = find_all(body, lambda n: n.tag == "h1")
     check(len(h1) == 1, f"[5] h1 на странице: {len(h1)}, нужен ровно один")
 
-    # --- Шрифт и стили ---
-    fonts = [n for n in root.iter() if n.tag == "link" and n.attrs.get("href") == FONT_HREF]
-    check(len(fonts) == 1, "[шрифт] нет подключения Manrope строкой из interfaces.md")
+    # --- Стили только в style.css ---
     for n in body.iter():
         style = n.attrs.get("style")
         if style is not None:
@@ -337,10 +353,66 @@ def main():
             check(all(r == "aspect-ratio" for r in rules),
                   f"[стили] строка {n.line}: style=\"{style}\" — стили только в style.css")
 
+    check_font(root)
     check_radius(body)
     check_facts(body)
+    check_phone_rows(body)
     check_hero_lines(body)
     return report()
+
+
+def font_families(value):
+    """«'Inter', Arial, sans-serif» → ['inter', 'arial', 'sans-serif']."""
+    return [f.strip().strip("'\"").strip().lower() for f in value.split(",") if f.strip()]
+
+
+def check_font(root):
+    """G05 (таск F4): весь сайт набран Inter. Google Fonts подключён ровно строкой из interfaces.md
+    (никаких других семейств); в style.css шрифт задаётся только как Inter с запасными Arial и
+    sans-serif, body набран Inter; H1, H2, H3 и бейджи — вес 800 и −0,01em на всех ширинах;
+    README называет Inter."""
+    hrefs = [n.attrs.get("href") or "" for n in root.iter() if n.tag == "link"]
+    sheets = [h for h in hrefs if "fonts.googleapis.com/css" in h]
+    check(sheets == [FONT_HREF],
+          f"[G05] подключение шрифта {sheets or 'не найдено'} — нужна ровно строка из interfaces.md: {FONT_HREF}")
+    if not check(STYLE.is_file(), "[G05] нет файла assets/css/style.css"):
+        return
+    css = STYLE.read_text(encoding="utf-8")
+    plain = re.sub(r"/\*.*?\*/", "", css, flags=re.S)
+    check("@font-face" not in plain and "@import" not in plain,
+          "[G05] в style.css @font-face или @import — шрифт подключается только строкой в index.html")
+    rules = css_rules(css)
+    allowed = {FONT_NAME.lower(), *FONT_FALLBACKS}
+    tokens = {}
+    for sel, decls in rules:
+        for prop, value in decls.items():
+            if prop == "font-family" or (prop.startswith("--") and "font" in prop):
+                if value.startswith("var(") or value in ("inherit", "initial", "unset"):
+                    continue
+                extra = [f for f in font_families(value) if f not in allowed]
+                check(not extra, f"[G05] «{sel}» {prop}: {value} — кроме Inter, шрифтов быть не должно ({extra})")
+                if prop.startswith("--"):
+                    tokens[prop] = value
+    body_font = [d.get("font-family") for sel, d in rules if sel == "body" and "font-family" in d]
+    family = body_font[-1] if body_font else ""
+    var = re.fullmatch(r"var\((--[\w-]+)\)", family or "")
+    if var:
+        family = tokens.get(var.group(1), "")
+    check(font_families(family or "")[:1] == [FONT_NAME.lower()],
+          f"[G05] body набран не Inter: font-family {body_font or 'не задан'}")
+
+    media_rules = css_rules_media(css)
+    narrow = (TABLET_MEDIA, PHONE_MEDIA)
+    for selector in HEADING_SELECTORS:
+        for prop, want in (("font-weight", HEADING_WEIGHT), ("letter-spacing", HEADING_TRACKING)):
+            base = css_value(media_rules, selector, prop, ("",))
+            check(base == want, f"[G05] «{selector}» {prop}: {base or 'не задан'}, нужно {want}")
+            for media, sel, decls in media_rules:  # планшет и телефон не перебивают
+                if prop in decls and selector in [s.strip() for s in sel.split(",")] and media in narrow:
+                    check(decls[prop] == want, f"[G05] «{sel}» {media}: {prop} {decls[prop]}, нужно {want}")
+
+    if check(README.is_file(), "[G05] нет README.md"):
+        check(FONT_NAME in README.read_text(encoding="utf-8"), "[G05] README не говорит, что шрифт — Inter")
 
 
 def css_decls(block):
@@ -577,6 +649,209 @@ def check_facts(body):
         check(list_h - grid_h <= FACTS_TOLERANCE,
               f"[G01] планшет, #{sid}: список до {list_h:.1f} px выше сетки {grid_h:.1f} px "
               f"(ширина {grid_basis:.0f}) больше чем на {FACTS_TOLERANCE} px — под сеткой полоса")
+
+
+def css_length(expr, basis):
+    """Длина CSS в px: числа с px и %, 0, + − × ÷, скобки, calc(), min(), max(), clamp().
+    Проценты — от basis (ширины контейнера). Иначе ValueError."""
+    tokens = re.findall(r"(?:\d+\.?\d*|\.\d+)(?:px|%)?|[a-z]+\(|[()+\-*/,]|\S", expr.strip().lower())
+    pos = 0
+
+    def peek():
+        return tokens[pos] if pos < len(tokens) else None
+
+    def take(expected=None):
+        nonlocal pos
+        tok = peek()
+        if tok is None or (expected and tok != expected):
+            raise ValueError(f"в «{expr}» ожидалось {expected or 'значение'}, найдено {tok}")
+        pos += 1
+        return tok
+
+    def atom():
+        tok = take()
+        if tok in ("calc(", "("):
+            value = add()
+            take(")")
+            return value
+        if tok in ("min(", "max(", "clamp("):
+            args = [add()]
+            while peek() == ",":
+                take()
+                args.append(add())
+            take(")")
+            if tok == "clamp(":
+                return max(args[0], min(args[1], args[2]))
+            return min(args) if tok == "min(" else max(args)
+        if tok == "-":
+            return -atom()
+        if tok.endswith("%"):
+            return float(tok[:-1]) * basis / 100
+        if tok.endswith("px"):
+            return float(tok[:-2])
+        if re.fullmatch(r"\d+\.?\d*|\.\d+", tok):
+            return float(tok)
+        raise ValueError(f"в «{expr}» непонятное «{tok}»")
+
+    def mul():
+        value = atom()
+        while peek() in ("*", "/"):
+            op, other = take(), atom()
+            value = value * other if op == "*" else value / other
+        return value
+
+    def add():
+        value = mul()
+        while peek() in ("+", "-"):
+            op, other = take(), mul()
+            value = value + other if op == "+" else value - other
+        return value
+
+    result = add()
+    if peek() is not None:
+        raise ValueError(f"в «{expr}» лишнее «{peek()}»")
+    return result
+
+
+def split_top(value, sep):
+    """Разбить по sep (запятая или пробел) только на верхнем уровне скобок."""
+    parts, depth, cur = [], 0, ""
+    for ch in value:
+        depth += (ch == "(") - (ch == ")")
+        if depth == 0 and (ch == sep or (sep == " " and ch.isspace())):
+            if cur.strip():
+                parts.append(cur.strip())
+            cur = ""
+        else:
+            cur += ch
+    if cur.strip():
+        parts.append(cur.strip())
+    return parts
+
+
+def grid_columns(template, width, gap):
+    """Колонки grid-template-columns при ширине сетки width и межколоннике gap:
+    [(минимум в px, максимум — px или None для fr)]. repeat(auto-fill|auto-fit, …) считается,
+    как в браузере: столько колонок минимальной ширины, сколько помещается (не меньше одной)."""
+    def track(spec):
+        if spec.startswith("minmax(") and spec.endswith(")"):
+            low, high = split_top(spec[7:-1], ",")
+        else:
+            low = high = spec
+        low_px = None if low.endswith("fr") or low == "auto" else css_length(low, width)
+        high_px = None if high.endswith("fr") else css_length(high, width)
+        return low_px, high_px
+
+    columns = []
+    for part in split_top(template, " "):
+        if part.startswith("repeat(") and part.endswith(")"):
+            count, spec = split_top(part[7:-1], ",")
+            low, high = track(spec)
+            if count in ("auto-fill", "auto-fit"):
+                size = low if low is not None else high
+                if size is None:
+                    raise ValueError(f"repeat({count}) без определённой ширины колонки: {spec}")
+                count = max(1, int((width + gap + 1e-6) // (size + gap)))
+            columns += [(low or 0.0, high)] * int(count)
+        else:
+            low, high = track(part)
+            columns.append((low or 0.0, high))
+    return columns
+
+
+def cascade(rules, classes, prop, medias):
+    """Значение prop у элемента с классами classes: последнее по порядку файла среди правил
+    с простыми селекторами «.класс» (одинаковая специфичность) из medias."""
+    value = None
+    wanted = {"." + c for c in classes}
+    for media, sel, decls in rules:
+        if media in medias and prop in decls and wanted & {s.strip() for s in sel.split(",")}:
+            value = decls[prop]
+    return value
+
+
+def column_gap(rules, classes, medias):
+    """Межколонник: column-gap или вторая часть gap — что задано позже."""
+    value = None
+    wanted = {"." + c for c in classes}
+    for media, sel, decls in rules:
+        if media in medias and wanted & {s.strip() for s in sel.split(",")}:
+            if "gap" in decls:
+                parts = decls["gap"].split()
+                value = parts[1] if len(parts) > 1 else parts[0]
+            if "column-gap" in decls:
+                value = decls["column-gap"]
+    return px(value) if value else 0.0
+
+
+def row_fill(rules, classes, width, label):
+    """Ряд сетки при ширине width: колонки, пусто справа (px) и переполнение (px)."""
+    phone = ("", TABLET_MEDIA, PHONE_MEDIA)
+    template = cascade(rules, classes, "grid-template-columns", phone) or ""
+    gap = column_gap(rules, classes, phone)
+    try:
+        columns = grid_columns(template, width, gap)
+    except ValueError as err:
+        fail(f"[G04] {label}: grid-template-columns «{template}» не разобрать — {err}")
+        return None
+    gaps = gap * (len(columns) - 1)
+    mins = sum(low for low, _ in columns) + gaps
+    if any(high is None for _, high in columns):
+        used = max(width, mins)  # колонки fr забирают всю свободную ширину
+    else:
+        free = (width - gaps) / len(columns)
+        used = sum(max(low, min(high, free)) for low, high in columns) + gaps
+    return len(columns), width - used, template
+
+
+def check_phone_rows(body):
+    """G04 (таск F4): на телефоне (320–767) ряды доходят до правого края контента (±1 px).
+    Сетки 6 картинок секций 4 и 6 — на всю строку под списком, полными рядами: по 2 в ряд,
+    от ~560 px — по 3; карточки секций 2, 3, 7 и кнопки CTA (2×2) — тоже на всю ширину.
+    Ширина колонок вычисляется по grid-template-columns из style.css для каждой ширины экрана."""
+    if not STYLE.is_file():
+        return
+    rules = css_rules_media(STYLE.read_text(encoding="utf-8"))
+    phone = ("", TABLET_MEDIA, PHONE_MEDIA)
+    pad = px(cascade(rules, ["container"], "padding-left", phone)) or 0.0
+    pad_r = px(cascade(rules, ["container"], "padding-right", phone)) or 0.0
+
+    # Сетка фактов — отдельной строкой flex-контейнера .facts и растянута на всю строку.
+    grid_width = cascade(rules, ["facts__grid"], "width", phone)
+    grow, _, grid_basis = flex_parts(cascade(rules, ["facts__grid"], "flex", phone))
+    list_basis = px(flex_parts(cascade(rules, ["facts__list"], "flex", phone))[2]) or 0.0
+    facts_gap = column_gap(rules, ["facts"], phone)
+    check(grid_width in (None, "auto", "100%") and grow > 0,
+          f"[G04] телефон: .facts__grid width {grid_width}, flex-grow {grow} — сетка не тянется на всю строку")
+    check(cascade(rules, ["facts__grid"], "max-width", phone) in (None, "none", "100%"),
+          "[G04] телефон: у .facts__grid ограничена max-width — справа останется пусто")
+    check(cascade(rules, ["facts"], "flex-wrap", phone) == "wrap",
+          "[G04] телефон: у .facts нет flex-wrap: wrap — сетка не встаёт под список")
+
+    rows = [(["facts__grid"], "сетка картинок секций 4 и 6", True)]
+    for node in by_class(body, "cards"):
+        rows.append((node.classes, "карточки ." + " .".join(node.classes), False))
+    rows.append((["cta__buttons"], "кнопки CTA", False))
+    for screen in PHONE_WIDTHS:
+        width = screen - pad - pad_r
+        basis = px(grid_basis)
+        check(basis is None or list_basis + facts_gap + basis > width,
+              f"[G04] {screen} px: сетка картинок встаёт рядом со списком, а не под ним")
+        for classes, label, is_facts in rows:
+            filled = row_fill(rules, classes, width, label)
+            if filled is None:
+                continue
+            count, empty, template = filled
+            check(abs(empty) <= EDGE_TOLERANCE,
+                  f"[G04] {screen} px, {label}: справа пусто {empty:.0f} px "
+                  f"(контент {width:.0f} px, колонки «{template}»)" if empty > 0 else
+                  f"[G04] {screen} px, {label}: ряд шире контента на {-empty:.0f} px")
+            if is_facts:
+                want = 2 if screen < FACTS_THREE_FROM else 3
+                check(count == want,
+                      f"[G04] {screen} px, {label}: {count} в ряд, нужно {want} (6 картинок — полные ряды)")
+            elif "cta__buttons" in classes:
+                check(count == 2, f"[G04] {screen} px, кнопки CTA: {count} в ряд, нужно 2 (сетка 2×2)")
 
 
 def report():

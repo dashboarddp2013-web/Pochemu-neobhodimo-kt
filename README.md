@@ -79,6 +79,10 @@ python tools/check_assets.py
 
 ## Шрифт
 
-В макете гротеск, похожий на Gilroy / Proxima Nova (оба платные); на сайте — бесплатный Manrope из Google Fonts.
-Заменить: строку `<link … fonts.googleapis.com …>` в `<head>` файла `index.html` и `font-family` в начале
+Сайт набран шрифтом **Inter** — бесплатным, из Google Fonts (выбор клиники из сравнения шрифтов): веса 400, 500,
+700 и 800; заголовки и числа на карточках — 800 с чуть поджатыми буквами. В макете гротеск, похожий
+на Gilroy / Proxima Nova (оба платные).
+Заменить: строку `<link … fonts.googleapis.com …>` в `<head>` файла `index.html` и `--font` в начале
 `assets/css/style.css` (для платного шрифта — подключить его файлы по лицензии и прописать `@font-face`).
+Проверка `tools/check_site.py` сверяет подключение с константами `FONT_HREF` и `FONT_NAME` в начале
+скрипта — при замене шрифта поправьте и их.

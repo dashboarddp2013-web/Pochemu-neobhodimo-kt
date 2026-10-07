@@ -444,7 +444,7 @@ def check_publishing():
     if ok(readme.is_file(), "нет README.md"):
         text = readme.read_text(encoding="utf-8")
         for needle in ["Что заменить", "index.html", "python -m http.server", "Settings", "Pages",
-                       "GitHub Actions", "Manrope", "Gilroy"] + STUBS:
+                       "GitHub Actions", "Inter", "Gilroy"] + STUBS:
             ok(needle in text, "README.md: нет «%s»" % needle)
 
     for path in NO_RUN_DIR_FILES:
