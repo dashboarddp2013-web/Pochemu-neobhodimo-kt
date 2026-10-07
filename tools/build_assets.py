@@ -9,16 +9,20 @@
     ct-machine собирает из сетки 2x3 без пурпурной вставки;
   * иконки мессенджеров: квадраты 62x62 из тайла icons-messengers, цвет #4A678D, белое -> прозрачное;
   * фото и логотип: уменьшает исходники assets/img/src через tools/resize.ps1 (System.Drawing),
-    PNG затем пережимает без потерь (адаптивные фильтры + zlib 9);
+    PNG затем пережимает без потерь (адаптивные фильтры + zlib 9); там же делается xray-hands-1000.jpg —
+    лёгкая версия фото рук для телефона (таск F8, srcset);
   * лёгкие JPEG для мобильного интернета (таск F7): из готовых PNG иллюстраций делает одноимённые
     .jpg того же размера (JPEG_NAMES, качество JPEG_QUALITY) тем же tools/resize.ps1 (-Step jpeg);
-    PNG остаются на месте.
+    PNG остаются на месте;
+  * превью ссылки в мессенджере (таск F8): og-preview.jpg 1200x630 — логотип и иллюстрация step-2 на фоне
+    страницы (шаг og в tools/resize.ps1, берёт готовые logo-white.png и step-2.png из assets/img).
 Исходники в assets/img/src не меняются. Только стандартная библиотека Python + Windows PowerShell 5.1.
 
 Запуск из корня сайта (около полутора минут):
     PYTHONIOENCODING=utf-8 python tools/build_assets.py            # все картинки
     PYTHONIOENCODING=utf-8 python tools/build_assets.py see-01 photos   # выборочно; photos — фото и логотип
     PYTHONIOENCODING=utf-8 python tools/build_assets.py jpeg            # только JPEG из готовых PNG
+    PYTHONIOENCODING=utf-8 python tools/build_assets.py og              # только превью og-preview.jpg
     PYTHONIOENCODING=utf-8 python tools/build_assets.py --naive    # склейка без чистки (для проверки проверки)
 Потом: PYTHONIOENCODING=utf-8 python tools/check_assets.py
 """
@@ -64,6 +68,8 @@ ONLY = [a for a in sys.argv[1:] if not a.startswith("--")]
 JPEG_NAMES = ["step-1", "step-2", "step-3", "exam-ct", "see-01", "see-02", "see-03", "see-04",
               "safety-ct", "ct-machine"]
 JPEG_QUALITY = 82
+# Превью ссылки (F8, G16): 1200x630; 90 — свечение фона без ступенек, вес ≈ 100 КБ при пределе 150 КБ.
+OG_QUALITY = 90
 
 
 # ------------------------------------------------------------------ PNG-кодер с адаптивными фильтрами
@@ -345,6 +351,12 @@ def build_jpegs(names):
                     "-Step", "jpeg", "-Jpeg", ",".join(names), "-JpegQuality", str(JPEG_QUALITY)], check=True)
 
 
+def build_og():
+    """Превью ссылки для мессенджеров assets/img/og-preview.jpg (System.Drawing через tools/resize.ps1, шаг og)."""
+    subprocess.run(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", RESIZE_PS1,
+                    "-Step", "og", "-OgQuality", str(OG_QUALITY)], check=True)
+
+
 def main():
     d = json.load(open(os.path.join(DESIGN, "captures.json"), encoding="utf-8"))
     for item in d["items"]:
@@ -369,6 +381,11 @@ def main():
     jpegs = [n for n in JPEG_NAMES if not ONLY or "jpeg" in ONLY or n in ONLY]
     if jpegs:
         build_jpegs(jpegs)
+
+    # Превью берёт готовые logo-white.png и step-2.png — поэтому в самом конце; при выборочной сборке —
+    # по «og» и когда пересобраны его исходники (photos, step-2).
+    if not ONLY or any(n in ONLY for n in ("og", "photos", "step-2")):
+        build_og()
 
 
 if __name__ == "__main__":

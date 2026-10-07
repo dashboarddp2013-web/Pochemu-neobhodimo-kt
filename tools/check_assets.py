@@ -18,6 +18,8 @@
   * лёгкие JPEG для телефона (таск F7, §10.8): 10 файлов с теми же именами, что у PNG, тот же
     пиксельный размер, каждый ≤ 110 КБ, целый файл (маркеры SOI/EOI), а все картинки страницы
     (10 JPEG + logo-white.png + xray-hands.jpg) вместе ≤ 1 МБ;
+  * превью ссылки в мессенджере и лёгкое фото для телефона (таск F8, G16, G15): og-preview.jpg —
+    1200×630, ≤ 150 КБ; xray-hands-1000.jpg — 1000×667 (половина xray-hands.jpg), ≤ 80 КБ; оба — целые JPEG;
   * есть .nojekyll, workflow GitHub Pages и README со ссылкой на tools/check_site.py и словом «Inter»
     (таблицы «Что заменить» и якорей-заглушек в редакции 2 нет — их проверка снята);
   * в tools/ и README.md нет зашитого имени папки прогона .autopilot/<дата-…> —
@@ -91,6 +93,12 @@ JPEG_MAX_BYTES = 110 * 1000
 # Вес картинок страницы: 10 JPEG + логотип + фото рук (G15 — «быстро через мобильный интернет»).
 PAGE_EXTRA = ["logo-white.png", "xray-hands.jpg"]
 PAGE_MAX_BYTES = 1000 * 1000
+
+# Превью ссылки (og:image) и лёгкая версия фото рук для телефона (F8): (ширина, высота, максимум байт).
+PREVIEW_IMAGES = {
+    "og-preview.jpg": (1200, 630, 150 * 1000),
+    "xray-hands-1000.jpg": (1000, 667, 80 * 1000),
+}
 
 problems = []
 checks = 0
@@ -451,6 +459,20 @@ def check_jpegs():
         ok(total <= PAGE_MAX_BYTES, "картинки страницы весят %d байт, предел %d" % (total, PAGE_MAX_BYTES))
 
 
+def check_preview_images():
+    """Два новых файла F8: есть, JPEG целый, размер в пикселях точный, вес в пределах."""
+    for name, (ew, eh, max_bytes) in PREVIEW_IMAGES.items():
+        path = IMG / name
+        if not ok(path.is_file(), "нет файла assets/img/%s" % name):
+            continue
+        data = path.read_bytes()
+        ok(len(data) <= max_bytes, "%s: %d байт, предел %d" % (name, len(data), max_bytes))
+        ok(data[:2] == b"\xff\xd8" and data[-2:] == b"\xff\xd9", "%s — не целый JPEG (нет маркера SOI или EOI)" % name)
+        dims = jpeg_size(path)
+        if ok(dims is not None, "%s — не JPEG" % name):
+            ok(dims == (ew, eh), "%s: размер %d×%d, нужен %d×%d" % (name, dims[0], dims[1], ew, eh))
+
+
 def check_publishing():
     ok((ROOT / ".nojekyll").is_file(), "нет .nojekyll в корне")
 
@@ -491,6 +513,7 @@ def check_publishing():
 def main():
     check_images()
     check_jpegs()
+    check_preview_images()
     check_publishing()
     if problems:
         print("Найдено проблем: %d (проверок: %d)" % (len(problems), checks))

@@ -27,6 +27,10 @@
   [G15] отступы секций 72 / 56 / 32 (десктоп / планшет / телефон), первого экрана на телефоне 24 / 32;
        ряды картинок и пунктов полные на всю ширину: колонки по GRIDS на каждой ширине;
   [G03] в первом экране нет вертикальных линий;
+  [G16] превью ссылки в мессенджере: og:image (абсолютный адрес, 1200×630), og:url, og:type, og:locale,
+        twitter:card, прежние og:title и og:description; файл картинки на месте;
+  [G15] фото рук в #planning: srcset 1000w + 2000w, sizes — телефон (до 767 px) берёт файл на 1000 px
+        при любой плотности экрана до 3×, десктоп на 2× — файл на 2000 px; width/height и alt прежние;
   README: без таблицы «Что заменить», со ссылкой на tools/check_site.py, словом «Inter» и «Пикассо».
 """
 import re
@@ -142,6 +146,27 @@ IMAGES = {
 NOT_JPEG_OK = {"logo-white.png"}  # логотип с прозрачным фоном остаётся PNG
 IMAGES_BUDGET = 1024 * 1024       # байт: общий вес картинок страницы (§10.8)
 RATIO_TOLERANCE = 0.02            # width/height разметки против пропорций файла
+
+# ---------------------------------------------------------------- Превью ссылки и лёгкое фото (F8, G16, G15)
+PAGE_URL = "https://dashboarddp2013-web.github.io/Pochemu-neobhodimo-kt/"
+OG_IMAGE_NAME = "og-preview.jpg"
+OG_TAGS = {  # <meta property="…" content="…">
+    "og:type": "website",
+    "og:title": TITLE,
+    "og:url": PAGE_URL,
+    "og:locale": "ru_RU",
+    "og:image": PAGE_URL + "assets/img/" + OG_IMAGE_NAME,
+    "og:image:width": "1200",
+    "og:image:height": "630",
+}
+TWITTER_TAGS = {"twitter:card": "summary_large_image"}  # <meta name="…" content="…">
+PLANNING_PHOTO = {
+    "alt": "Врач держит панорамный снимок челюстей и стоматологический зонд",
+    "width": "1000",
+    "height": "667",
+    "srcset": {"xray-hands-1000.jpg": 1000, "xray-hands.jpg": 2000},  # файл → ширина в пикселях
+}
+SRCSET_DPRS = (1, 2, 3)  # плотности экрана телефонов; десктоп проверяется на 2×
 
 # ---------------------------------------------------------------- Нет кнопок, ссылок и меню (§10.9)
 FORBIDDEN_TAGS = {"a", "button", "nav", "form", "input", "select", "textarea", "iframe", "dialog",
@@ -355,6 +380,8 @@ def main():
     check_sections(body)
     check_texts(root, body, raw)
     check_images(body)
+    check_preview(root)
+    check_planning_srcset(body)
     check_no_controls(root, body, raw)
 
     # --- Стили только в style.css ---
@@ -559,6 +586,108 @@ def check_images(body):
     if not missing:
         check(total <= IMAGES_BUDGET,
               f"[3] картинки страницы весят {total / 1024:.0f} КБ — больше {IMAGES_BUDGET // 1024} КБ")
+
+
+# ======================================================================== [G16] превью ссылки
+
+def check_preview(root):
+    """Мета-теги превью: каждый ровно один раз и с нужным значением; картинка превью лежит на месте."""
+    metas = find_all(root, lambda n: n.tag == "meta")
+
+    def values(attr, key):
+        return [(m.attrs.get("content") or "").strip() for m in metas if m.attrs.get(attr) == key]
+
+    for attr, tags in (("property", OG_TAGS), ("name", TWITTER_TAGS)):
+        for key, want in tags.items():
+            got = values(attr, key)
+            check(got == [want], f"[G16] <meta {attr}=\"{key}\">: {got or 'нет'}, нужно ровно одно «{want}»")
+    descs = values("name", "description")
+    check(len(descs) == 1 and values("property", "og:description") == descs,
+          "[G16] og:description должен быть один и совпадать с meta description")
+    check((ROOT / "assets" / "img" / OG_IMAGE_NAME).is_file(), f"[G16] нет файла assets/img/{OG_IMAGE_NAME}")
+
+
+# ======================================================================== [G15] лёгкое фото для телефона
+
+SIZES_PART = re.compile(r"\s*(?:\((min|max)-width:\s*(\d+(?:\.\d+)?)px\)\s+)?(\d+(?:\.\d+)?)(px|vw)\s*")
+
+
+def parse_sizes(sizes):
+    """sizes → [((мин., макс.) ширины окна или None, число, единица)]; None, если не разобрать.
+    Понимает «(max-width: Npx) L», «(min-width: Npx) L» и длины L вида «Npx», «Nvw»."""
+    out = []
+    for part in sizes.split(","):
+        m = SIZES_PART.fullmatch(part)
+        if not m:
+            return None
+        kind, bound, num, unit = m.groups()
+        cond = None
+        if kind:
+            cond = (float(bound), None) if kind == "min" else (None, float(bound))
+        out.append((cond, float(num), unit))
+    return out
+
+
+def slot_width(sizes, viewport):
+    """Ширина слота (px) при ширине окна viewport — по первому подходящему условию, как в браузере."""
+    for cond, num, unit in sizes:
+        if cond is not None:
+            lo, hi = cond
+            if (lo is not None and viewport < lo) or (hi is not None and viewport > hi):
+                continue
+        return num * viewport / 100 if unit == "vw" else num
+    return None
+
+
+def pick_candidate(candidates, need):
+    """Как браузер: самый маленький файл, у которого ширина ≥ нужной; нет такого — самый большой."""
+    for name, width in sorted(candidates.items(), key=lambda c: c[1]):
+        if width >= need:
+            return name
+    return max(candidates, key=candidates.get)
+
+
+def check_planning_srcset(body):
+    section = by_id(body, "planning")
+    imgs = find_all(section, lambda n: n.tag == "img") if section is not None else []
+    if not check(len(imgs) == 1, f"[G15] в #planning нужна одна картинка, найдено {len(imgs)}"):
+        return
+    img = imgs[0]
+    for attr in ("alt", "width", "height"):
+        check((img.attrs.get(attr) or "") == PLANNING_PHOTO[attr],
+              f"[G15] #planning: {attr}=\"{img.attrs.get(attr)}\", должно остаться \"{PLANNING_PHOTO[attr]}\"")
+    check(basename(img.attrs.get("src")) == "xray-hands.jpg", "[G15] #planning: src должен остаться xray-hands.jpg")
+
+    candidates = {}
+    for part in filter(None, (p.strip() for p in (img.attrs.get("srcset") or "").split(","))):
+        m = re.fullmatch(r"(assets/img/[\w.-]+)\s+(\d+)w", part)
+        if m:
+            candidates[basename(m.group(1))] = int(m.group(2))
+        else:
+            fail(f"[G15] #planning: srcset «{part}» — нужен вид «assets/img/файл.jpg 1000w»")
+    if not check(candidates == PLANNING_PHOTO["srcset"],
+                 f"[G15] #planning: srcset {candidates or 'нет'}, нужно {PLANNING_PHOTO['srcset']}"):
+        return
+    for name, width in candidates.items():  # дескриптор — правда о файле
+        size = image_size(ROOT / "assets" / "img" / name)
+        check(size is not None and size[0] == width,
+              f"[G15] #planning: {name} объявлен как {width}w, а в файле {size[0] if size else 'нет файла'} px")
+
+    sizes = parse_sizes(img.attrs.get("sizes") or "")
+    if not check(sizes is not None, f"[G15] #planning: sizes «{img.attrs.get('sizes') or 'нет'}» — нет или не разобрать"):
+        return
+    light, full = "xray-hands-1000.jpg", "xray-hands.jpg"
+    for width in PHONE_WIDTHS:
+        slot = slot_width(sizes, width)
+        for dpr in SRCSET_DPRS:
+            got = pick_candidate(candidates, slot * dpr) if slot else None
+            check(got == light, f"[G15] #planning: при ширине {width} px и плотности {dpr}× браузер возьмёт {got}, "
+                                f"а телефону нужен {light}")
+    for width in DESKTOP_WIDTHS:  # на экране десктопа с 2× фото не должно мылиться
+        slot = slot_width(sizes, width)
+        got = pick_candidate(candidates, slot * 2) if slot else None
+        check(got == full, f"[G15] #planning: при ширине {width} px и плотности 2× браузер возьмёт {got}, "
+                           f"а десктопу нужен {full}")
 
 
 # ======================================================================== [4] ни кнопок, ни ссылок
