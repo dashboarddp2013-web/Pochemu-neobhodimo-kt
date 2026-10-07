@@ -9,12 +9,16 @@
     ct-machine собирает из сетки 2x3 без пурпурной вставки;
   * иконки мессенджеров: квадраты 62x62 из тайла icons-messengers, цвет #4A678D, белое -> прозрачное;
   * фото и логотип: уменьшает исходники assets/img/src через tools/resize.ps1 (System.Drawing),
-    PNG затем пережимает без потерь (адаптивные фильтры + zlib 9).
+    PNG затем пережимает без потерь (адаптивные фильтры + zlib 9);
+  * лёгкие JPEG для мобильного интернета (таск F7): из готовых PNG иллюстраций делает одноимённые
+    .jpg того же размера (JPEG_NAMES, качество JPEG_QUALITY) тем же tools/resize.ps1 (-Step jpeg);
+    PNG остаются на месте.
 Исходники в assets/img/src не меняются. Только стандартная библиотека Python + Windows PowerShell 5.1.
 
 Запуск из корня сайта (около полутора минут):
     PYTHONIOENCODING=utf-8 python tools/build_assets.py            # все картинки
     PYTHONIOENCODING=utf-8 python tools/build_assets.py see-01 photos   # выборочно; photos — фото и логотип
+    PYTHONIOENCODING=utf-8 python tools/build_assets.py jpeg            # только JPEG из готовых PNG
     PYTHONIOENCODING=utf-8 python tools/build_assets.py --naive    # склейка без чистки (для проверки проверки)
 Потом: PYTHONIOENCODING=utf-8 python tools/check_assets.py
 """
@@ -53,6 +57,13 @@ RESIZE_PS1 = os.path.join(ROOT, "tools", "resize.ps1")
 
 NAIVE = "--naive" in sys.argv
 ONLY = [a for a in sys.argv[1:] if not a.startswith("--")]
+
+# Лёгкие JPEG для страницы (F7, §10.8): базовые имена PNG из assets/img, у JPEG то же имя и тот же размер.
+# 82 — нижняя граница диапазона 82–90: на тонких тёмно-синих линиях и плоских фонах артефактов не видно
+# (проверено 1:1), а вес 10 файлов вместе ≈ 455 КБ; каждый ≤ 110 КБ (tools/check_assets.py).
+JPEG_NAMES = ["step-1", "step-2", "step-3", "exam-ct", "see-01", "see-02", "see-03", "see-04",
+              "safety-ct", "ct-machine"]
+JPEG_QUALITY = 82
 
 
 # ------------------------------------------------------------------ PNG-кодер с адаптивными фильтрами
@@ -328,6 +339,12 @@ def build_photos():
             print(name, img[0], img[1], size)
 
 
+def build_jpegs(names):
+    """Лёгкие JPEG из готовых PNG assets/img (System.Drawing через tools/resize.ps1, шаг jpeg)."""
+    subprocess.run(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", RESIZE_PS1,
+                    "-Step", "jpeg", "-Jpeg", ",".join(names), "-JpegQuality", str(JPEG_QUALITY)], check=True)
+
+
 def main():
     d = json.load(open(os.path.join(DESIGN, "captures.json"), encoding="utf-8"))
     for item in d["items"]:
@@ -347,6 +364,12 @@ def main():
 
     if not ONLY or "photos" in ONLY:
         build_photos()
+
+    # JPEG делаются из PNG, поэтому — после них; при выборочной сборке — только для выбранных (или все по «jpeg»)
+    jpegs = [n for n in JPEG_NAMES if not ONLY or "jpeg" in ONLY or n in ONLY]
+    if jpegs:
+        build_jpegs(jpegs)
+
 
 if __name__ == "__main__":
     main()

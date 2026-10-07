@@ -15,7 +15,11 @@
   * на краях иллюстраций нет полос, пятен и штрихов: край сравнивается с рисунком за зоной
     чистки (дальше 8 px от края), а не сам с собой; на стыках тайлов нет швов;
   * в ct-machine.png нет пурпурных пикселей;
-  * есть .nojekyll, workflow GitHub Pages и README с таблицей «Что заменить»;
+  * лёгкие JPEG для телефона (таск F7, §10.8): 10 файлов с теми же именами, что у PNG, тот же
+    пиксельный размер, каждый ≤ 110 КБ, целый файл (маркеры SOI/EOI), а все картинки страницы
+    (10 JPEG + logo-white.png + xray-hands.jpg) вместе ≤ 1 МБ;
+  * есть .nojekyll, workflow GitHub Pages и README со ссылкой на tools/check_site.py и словом «Inter»
+    (таблицы «Что заменить» и якорей-заглушек в редакции 2 нет — их проверка снята);
   * в tools/ и README.md нет зашитого имени папки прогона .autopilot/<дата-…> —
     проверки и сборка работают и после её переименования.
 """
@@ -79,9 +83,14 @@ ICONS = ["icon-telegram.png", "icon-whatsapp.png", "icon-max.png"]
 ICON_SIZE = (62, 62)
 ICON_COLOR = (0x4A, 0x67, 0x8D)
 
-# Заглушки §7 — должны быть в таблице «Что заменить» README.
-STUBS = ["#uslugi", "#ceny", "#komanda", "#akcii", "#otzyvy", "#pacientam", "#kontakty",
-         "#video", "#vopros", "#telegram", "#whatsapp", "#max"]
+# Лёгкие JPEG для страницы (F7, §10.8): те же базовые имена и пиксельные размеры, что у одноимённых
+# PNG из ILLUSTRATIONS (размер берётся оттуда, а не из JPEG, который проверяется).
+JPEGS = ["step-1.jpg", "step-2.jpg", "step-3.jpg", "exam-ct.jpg", "see-01.jpg", "see-02.jpg",
+         "see-03.jpg", "see-04.jpg", "safety-ct.jpg", "ct-machine.jpg"]
+JPEG_MAX_BYTES = 110 * 1000
+# Вес картинок страницы: 10 JPEG + логотип + фото рук (G15 — «быстро через мобильный интернет»).
+PAGE_EXTRA = ["logo-white.png", "xray-hands.jpg"]
+PAGE_MAX_BYTES = 1000 * 1000
 
 problems = []
 checks = 0
@@ -416,6 +425,32 @@ def check_images():
         ok(inner_clear >= 40, "%s: внутри знака нет прозрачных (белых) деталей" % name)
 
 
+def check_jpegs():
+    """Лёгкие JPEG: есть, размер как у PNG, вес ≤ JPEG_MAX_BYTES, файл не оборван; сумма по странице ≤ PAGE_MAX_BYTES."""
+    total, complete = 0, True
+    for name in JPEGS:
+        path = IMG / name
+        if not ok(path.is_file(), "нет файла assets/img/%s" % name):
+            complete = False
+            continue
+        data = path.read_bytes()
+        total += len(data)
+        ok(len(data) <= JPEG_MAX_BYTES, "%s: %d байт, предел %d" % (name, len(data), JPEG_MAX_BYTES))
+        ok(data[:2] == b"\xff\xd8" and data[-2:] == b"\xff\xd9", "%s — не целый JPEG (нет маркера SOI или EOI)" % name)
+        want = ILLUSTRATIONS[name[:-4] + ".png"]
+        dims = jpeg_size(path)
+        if ok(dims is not None, "%s — не JPEG" % name):
+            ok(dims == want, "%s: размер %d×%d, нужен %d×%d (как у %s.png)" % ((name,) + dims + want + (name[:-4],)))
+    for name in PAGE_EXTRA:
+        path = IMG / name
+        if path.is_file():
+            total += path.stat().st_size
+        else:
+            complete = False
+    if complete:
+        ok(total <= PAGE_MAX_BYTES, "картинки страницы весят %d байт, предел %d" % (total, PAGE_MAX_BYTES))
+
+
 def check_publishing():
     ok((ROOT / ".nojekyll").is_file(), "нет .nojekyll в корне")
 
@@ -443,8 +478,7 @@ def check_publishing():
     readme = ROOT / "README.md"
     if ok(readme.is_file(), "нет README.md"):
         text = readme.read_text(encoding="utf-8")
-        for needle in ["Что заменить", "index.html", "python -m http.server", "Settings", "Pages",
-                       "GitHub Actions", "Inter", "Gilroy"] + STUBS:
+        for needle in ["tools/check_site.py", "Inter"]:
             ok(needle in text, "README.md: нет «%s»" % needle)
 
     for path in NO_RUN_DIR_FILES:
@@ -456,6 +490,7 @@ def check_publishing():
 
 def main():
     check_images()
+    check_jpegs()
     check_publishing()
     if problems:
         print("Найдено проблем: %d (проверок: %d)" % (len(problems), checks))

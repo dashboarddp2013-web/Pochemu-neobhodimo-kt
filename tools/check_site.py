@@ -1,44 +1,34 @@
 #!/usr/bin/env python3
-"""Проверка страницы сайта «Денталь профи» без браузера.
+"""Проверка страницы сайта «Денталь профи» без браузера — редакция 2 («Почему необходимо КТ»).
 
 Запуск из корня сайта:
     PYTHONIOENCODING=utf-8 python tools/check_site.py
 
-Код возврата 0 — всё в порядке; иначе печатает найденные проблемы и возвращает 1.
-Только стандартная библиотека Python 3.
+Код возврата 0 — всё в порядке; иначе печатает строки «ПРОБЛЕМА: …» и возвращает 1.
+Только стандартная библиотека Python 3. Эталон текстов — в самом скрипте (TEXTS ниже), это ТЗ
+коммерческого директора слово в слово; служебная папка .autopilot для проверки не нужна.
 
-Что проверяется (тестовый шов из interfaces.md):
-  1. index.html разбирается html.parser без незакрытых и лишних тегов в body;
-  2. каждый текст из design/frame1-desktop.json (узлы «p») есть в видимом тексте
-     страницы после нормализации пробелов и регистра; для исправлений §8 спеки
-     проверяется исправленный вариант (одно «лечения», «Без КТ» — 01–06 по порядку);
-  3. у каждого <img> есть непустой alt (или alt="" + aria-hidden="true"), width,
-     height, файл существует; ниже первого экрана — loading="lazy";
-  4. пункты меню и кнопки ведут на заглушки §7; все ссылки — только якоря,
-     ни одного адреса мессенджеров; в начале файла — комментарий «ЗАМЕНИТЬ»;
-  5. все 9 id секций на месте и в нужном порядке; ровно один h1; у секций есть h2.
-Плюс: lang="ru", нет style="" (кроме aspect-ratio); в style.css у кнопок .btn скругление
-var(--radius-btn) = 12px на всех ширинах, у карточек и ячеек углы прямые (G02); в секциях 4 и 6
-под сеткой иллюстраций нет пустой полосы (G01, таск F2): по числам style.css и размерам картинок
-высота сетки равна высоте списка на десктопе, а на планшете список и сетка
-переносятся друг под друга и строки списка растягиваются до высоты сетки;
-в первом экране нет вертикальных линий — ни разметки, ни стилей (G03, таск F3).
-Таск F4: весь сайт набран Inter (G05) — Google Fonts подключён ровно строкой из interfaces.md,
-в style.css нет других шрифтов, кроме Inter и запасных, заголовки и бейджи — 800 и −0,01em,
-README называет Inter; на телефоне (320–767) сетки картинок секций 4 и 6, карточки и кнопки CTA
-доходят до правого края контента, сетки — полными рядами по 2, от ~560 px — по 3 (G04):
-по числам style.css ширина колонок вычисляется для каждой ширины экрана.
-Таск F5 (G06, §9 спеки): в секциях 4 и 6 каждый пункт списка — кнопка, связанная через
-aria-controls с картинкой своего номера, с aria-pressed; в style.css есть
-@media (prefers-reduced-motion: reduce), которое выключает анимации и перемещения и показывает
-скрытое до появления; контент скрывается только под классом html.has-reveal (его ставит main.js —
-без JS всё видно); @keyframes меняют только transform и opacity, переходы не трогают размеры.
-
-Эталон текстов ищется, а не прописан: первая по имени .autopilot/*/design/frame1-desktop.json
-(папку прогона можно переименовать). Служебной папки .autopilot нет в публичном репозитории —
-там сверка текстов с эталоном пропускается (строка «ПРОПУСК: …»), остальные проверки идут как обычно.
+Что проверяется:
+  [1]  index.html разбирается html.parser без незакрытых и лишних тегов; lang="ru";
+  [2]  <title>, meta description; весь видимый текст страницы — ровно тексты ТЗ в порядке TEXTS:
+       ни одного недостающего и ни одного лишнего слова; запрещённых текстов прежней редакции
+       (меню, видео, «Без КТ / С КТ», «мкЗв», «Остались вопросы», мессенджеры…) нет ни в тексте,
+       ни в title, meta и alt; подписи иллюстраций и шаги «после КТ» стоят у своих картинок;
+  [3]  картинки: в каждой секции ровно свои файлы (иллюстрации — .jpg), файл существует, alt
+       не пустой, width/height в пропорции файла, ниже первого экрана loading="lazy";
+       общий вес картинок страницы ≤ 1 МБ;
+  [4]  на странице нет ни одного <a> и <button>, меню, бургера, форм и всплывающих окон;
+       в style.css и main.js не осталось меню, кнопок и связки «пункт ↔ картинка»;
+  [5]  секции и id — по порядку SECTION_IDS, все <section>, у каждой (кроме первого экрана) h2;
+       ровно один h1 — в первом экране;
+  [G05] шрифт — Inter (строка подключения из interfaces.md), H1 и H2 — 800 и −0,01em;
+  [G06] анимация бережная: prefers-reduced-motion, скрытие только под html.has-reveal (его ставит
+       main.js), @keyframes — только transform и opacity, переходы не сдвигают вёрстку;
+  [G15] отступы секций 72 / 56 / 32 (десктоп / планшет / телефон), первого экрана на телефоне 24 / 32;
+       ряды картинок и пунктов полные на всю ширину: колонки по GRIDS на каждой ширине;
+  [G03] в первом экране нет вертикальных линий;
+  README: без таблицы «Что заменить», со ссылкой на tools/check_site.py, словом «Inter» и «Пикассо».
 """
-import json
 import re
 import struct
 import sys
@@ -48,53 +38,141 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 INDEX = ROOT / "index.html"
 STYLE = ROOT / "assets" / "css" / "style.css"
-DESKTOP_JSON_GLOB = ".autopilot/*/design/frame1-desktop.json"
-
-
-def find_desktop_json():
-    """Эталон текстов макета из папки прогона (имя папки не важно)."""
-    hits = sorted(ROOT.glob(DESKTOP_JSON_GLOB))
-    return hits[-1] if hits else None
-
-
-DESKTOP_JSON = find_desktop_json()
-
-# G02: кнопки скруглены токеном §3, карточки и ячейки — с прямыми углами.
-RADIUS_TOKEN = "--radius-btn"
-RADIUS_VALUE = "12px"
-SQUARE_BLOCKS = ("card", "card__media", "card__img", "facts__cell", "facts__img")
-
-# G01 (таск F2): секции 4 и 6 — список из 6 строк рядом с сеткой 3×2 без пустой полосы под сеткой.
-FACTS_SECTIONS = ("see", "cases")
-FACTS_TOLERANCE = 8   # px: допуск разницы нижних краёв списка и сетки
-FACTS_MIN_LIST = 300  # px: уже — список и сетка друг под другом
-TABLET_MEDIA = "@media (max-width: 1199.98px)"
-PHONE_MEDIA = "@media (max-width: 767.98px)"
-
-SECTION_IDS = ["top", "safety", "exam", "see", "quality", "cases", "after", "best", "questions"]
-MENU_STUBS = ["#uslugi", "#ceny", "#komanda", "#akcii", "#otzyvy", "#pacientam", "#kontakty"]
-BUTTON_STUBS = ["#video", "#vopros", "#telegram", "#whatsapp", "#max"]
-ALL_STUBS = MENU_STUBS + BUTTON_STUBS
-MENU_TEXTS = ["Услуги", "Цены", "Команда", "Акции", "Отзывы", "Пациентам", "Контакты"]
-
+SCRIPT = ROOT / "assets" / "js" / "main.js"
 README = ROOT / "README.md"
 
-# G05 (таск F4): строка подключения — из interfaces.md; других шрифтов на сайте нет.
+# ---------------------------------------------------------------- Тексты ТЗ (§10.1–§10.7 спеки)
+TITLE = "Почему необходимо КТ — Денталь профи"
+SECTION_IDS = ["top", "clarify", "planning", "safety", "howto", "after", "next"]
+
+H1 = "КТ — следующий шаг к вашему плану лечения"
+HEADINGS = {
+    "clarify": "Что исследование поможет уточнить",
+    "planning": "Как КТ помогает спланировать лечение",
+    "safety": "Что важно знать о лучевой нагрузке",
+    "howto": "Как пройти исследование",
+    "after": "Что будет после КТ",
+    "next": "Продолжим подготовку вашего плана лечения",
+}
+# Подписи иллюстраций «Что исследование поможет уточнить» — у своих картинок, без номеров.
+CLARIFY_FIGURES = [
+    ("see-01.jpg", "Костная ткань"),
+    ("see-03.jpg", "Корни зубов"),
+    ("see-04.jpg", "Анатомические образования"),
+    ("see-02.jpg", "Очаги воспаления"),
+]
+HOWTO_ITEMS = [
+    ("Где пройти КТ",
+     "В диагностическом центре «Пикассо» по направлению, которое вы получили на консультации."),
+    ("Сколько времени заложить",
+     "Ориентируйтесь примерно на 30 минут на посещение. Точное время уточните при записи."),
+    ("Нужна ли подготовка",
+     "Как правило, специальная подготовка не требуется. При записи уточните рекомендации "
+     "для назначенного исследования."),
+    ("Как результаты попадут врачу",
+     "«Пикассо» отправляет результаты напрямую в нашу клинику по электронной почте. При посещении "
+     "уточните, что исследование выполняется по направлению «Денталь Профи»."),
+    ("Если КТ уже есть",
+     "Передайте имеющееся исследование координатору. Врач оценит, достаточно ли его для вашей "
+     "ситуации и требуется ли дополнительная диагностика."),
+]
+STEPS = [
+    ("step-1.jpg", "1. Получим исследование", "«Пикассо» направит результаты в клинику."),
+    ("exam-ct.jpg", "2. Врач изучит данные",
+     "Сопоставит КТ с результатами осмотра и подготовит дальнейшие предложения по лечению."),
+    ("step-3.jpg", "3. Обсудим следующий этап",
+     "Команда клиники свяжется с вами для согласования дальнейших действий."),
+]
+# Весь видимый текст страницы по порядку: секция → строки.
+TEXTS = {
+    "top": [
+        H1,
+        "На консультации врач рекомендовал вам компьютерную томографию, чтобы уточнить важные детали "
+        "перед планированием лечения. Исследование поможет оценить то, что невозможно увидеть только "
+        "при осмотре, и выбрать дальнейшую тактику с учётом вашей ситуации.",
+    ],
+    "clarify": [
+        HEADINGS["clarify"],
+        "В зависимости от задачи лечения врач оценивает состояние костной ткани, корней зубов "
+        "и окружающих структур, расположение важных анатомических образований и возможные очаги воспаления.",
+        "Результаты КТ дополняют осмотр и помогают обосновать дальнейшие решения.",
+        *[caption for _, caption in CLARIFY_FIGURES],
+    ],
+    "planning": [
+        HEADINGS["planning"],
+        "Врач сопоставляет исследование с результатами консультации, уточняет особенности вашей ситуации "
+        "и определяет возможные варианты лечения. Это помогает заранее обсудить последовательность "
+        "действий и важные ограничения.",
+    ],
+    "safety": [
+        HEADINGS["safety"],
+        "КТ связано с лучевой нагрузкой, поэтому врач назначает исследование для решения конкретной "
+        "диагностической задачи. Доза зависит от области исследования, оборудования и выбранного протокола.",
+        "Пройдите исследование по выданному направлению. Если у вас уже есть КТ, сначала передайте его "
+        "в клинику: врач проверит, подходит ли оно для текущего планирования.",
+    ],
+    "howto": [HEADINGS["howto"], *[line for item in HOWTO_ITEMS for line in item]],
+    "after": [HEADINGS["after"], *[line for _, title, text in STEPS for line in (title, text)]],
+    "next": [
+        HEADINGS["next"],
+        "Пройдите КТ по выданному направлению — после получения результатов мы сможем перейти "
+        "к следующему этапу.",
+        "Если что-то мешает пройти исследование или остались вопросы, ответьте координатору в переписке, "
+        "из которой вы открыли эту страницу. Мы поможем разобраться.",
+    ],
+}
+
+# Тексты прежней редакции, которые ТЗ убирает (видимый текст, title, meta, alt).
+FORBIDDEN_TEXTS = ["Мы не лечим", "на глаз", "Без КТ", "С КТ", "В каких случаях", "мкЗв", "микрозиверт",
+                   "перелета", "перелёта", "грудной клетки", "Остались вопросы", "Смотреть видео", "видео",
+                   "Задать вопрос", "Telegram", "WhatsApp", "Max", "Лучшее лечение", "Что позволяет увидеть",
+                   "недостаточно обычного осмотра", "Безопасно ли"]
+MENU_TEXTS = ["Услуги", "Цены", "Команда", "Акции", "Отзывы", "Пациентам", "Контакты"]
+
+# ---------------------------------------------------------------- Картинки (§10, таск F7 — JPEG)
+IMAGES = {
+    "top": ["logo-white.png", "step-2.jpg"],
+    "clarify": [name for name, _ in CLARIFY_FIGURES],
+    "planning": ["xray-hands.jpg"],
+    "safety": ["safety-ct.jpg"],
+    "howto": [],
+    "after": [name for name, _, _ in STEPS],
+    "next": ["ct-machine.jpg"],
+}
+NOT_JPEG_OK = {"logo-white.png"}  # логотип с прозрачным фоном остаётся PNG
+IMAGES_BUDGET = 1024 * 1024       # байт: общий вес картинок страницы (§10.8)
+RATIO_TOLERANCE = 0.02            # width/height разметки против пропорций файла
+
+# ---------------------------------------------------------------- Нет кнопок, ссылок и меню (§10.9)
+FORBIDDEN_TAGS = {"a", "button", "nav", "form", "input", "select", "textarea", "iframe", "dialog",
+                  "video", "audio", "embed", "object"}
+RETIRED_BLOCKS = ("nav", "burger", "mobile-menu", "btn", "facts", "compare", "best", "cta", "card")
+RETIRED_CLASS = re.compile(r"\.(%s)(?![\w-])|\.(%s)(__|--)" % ("|".join(RETIRED_BLOCKS), "|".join(RETIRED_BLOCKS)))
+FORBIDDEN_JS = ("data-menu", "is-menu-open", "aria-expanded", "data-facts", "aria-pressed",
+                "setInterval", "alert(", "confirm(", "prompt(", "window.open", "showModal")
+
+# ---------------------------------------------------------------- Шрифт (G05, таск F4)
 FONT_HREF = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap"
 FONT_NAME = "Inter"
 FONT_FALLBACKS = ("arial", "sans-serif")
-# H1, H2, H3 и бейджи «50 / мкЗв»: вес 800, межбуквенный −0,01em.
-HEADING_SELECTORS = (".hero__title", ".h2", ".card__title", ".compare__title", ".card__badge")
+HEADING_SELECTORS = (".hero__title", ".h2")  # H1 и H2: вес 800, межбуквенный −0,01em
 HEADING_WEIGHT = "800"
 HEADING_TRACKING = "-0.01em"
 
-# G04 (таск F4): ширины телефона, на которых ряды доходят до правого края контента (±1 px).
+# ---------------------------------------------------------------- Раскладка (§10.8, G15)
+TABLET_MEDIA = "@media (max-width: 1199.98px)"
+PHONE_MEDIA = "@media (max-width: 767.98px)"
+SECTION_PADDING = {"": "72px", TABLET_MEDIA: "56px", PHONE_MEDIA: "32px"}
+HERO_PHONE_PADDING = ("24px", "32px")  # сверху, снизу
 PHONE_WIDTHS = (320, 380, 480, 600, 700, 767)
-EDGE_TOLERANCE = 1
-FACTS_THREE_FROM = 560  # px экрана: уже — сетка 6 картинок по 2 в ряд, шире — по 3
+TABLET_WIDTHS = (768, 1024, 1199)
+DESKTOP_WIDTHS = (1200, 1440, 1710, 1920)
+CONTENT_MAX = 1710
+# Ряды: блок-сетка → колонок на (телефоне, планшете, десктопе); WIDE — пункт на все колонки.
+GRIDS = {"gallery": (2, 4, 4), "howto": (1, 2, 2), "steps": (1, 3, 3)}
+WIDE = {"howto": "howto__item--wide"}
 
-# G06 (таск F5): связка «пункт списка ↔ картинка» и бережная анимация (§9 спеки).
-PAIR_SECTIONS = FACTS_SECTIONS
+# ---------------------------------------------------------------- Анимация (G06, таск F5)
 REDUCED_MOTION = "prefers-reduced-motion: reduce"
 REVEAL_GATE = "has-reveal"  # класс на <html>, который ставит main.js; без него ничего не скрыто
 KEYFRAME_PROPS = {"transform", "opacity"}
@@ -103,21 +181,13 @@ LAYOUT_PROPS = re.compile(
     r"|border|border(-[a-z]+)?-width|font.*|line-height|letter-spacing|(row-|column-)?gap|grid.*|flex.*)$")
 TIMING = re.compile(r"^(-?\d*\.?\d+m?s|ease|ease-in|ease-out|ease-in-out|linear|step-start|step-end"
                     r"|(cubic-bezier|steps|var)\(.*\))$")
-FORBIDDEN_HOSTS = re.compile(
-    r"(t\.me|telegram\.(me|org|dog)|wa\.me|whatsapp\.com|max\.ru|vk\.com|instagram\.com|ok\.ru)",
-    re.I,
-)
-
-# §8 спеки: исправления текста макета.
-DOUBLED_PHRASE = "тактики лечения лечения врач"
-FIXED_PHRASE = "тактики лечения врач"
 
 VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta",
         "source", "track", "wbr"}
 HIDDEN_TAGS = {"head", "script", "style", "template", "noscript", "title"}
+INLINE_TAGS = {"span", "b", "i", "em", "strong", "small", "abbr", "sup", "sub", "nobr"}
 
 problems = []
-skipped = []  # пропущенные проверки (нет данных в этой копии) — не ошибка
 checks = 0
 
 
@@ -134,8 +204,13 @@ def check(cond, msg):
 
 
 def norm(text):
-    """Нормализация для сравнения: без пробельных символов, нижний регистр."""
+    """Нормализация для сравнения: без пробельных символов (и неразрывных), нижний регистр."""
     return re.sub(r"\s+", "", text).lower()
+
+
+def squash(text):
+    """Пробелы (и неразрывные) схлопнуты в один."""
+    return " ".join(text.split())
 
 
 class Node:
@@ -163,10 +238,7 @@ class Node:
             node = node.parent
 
     def text(self):
-        parts = []
-        for child in self.children:
-            parts.append(child if isinstance(child, str) else child.text())
-        return "".join(parts)
+        return visible_text(self)
 
 
 class TreeBuilder(HTMLParser):
@@ -174,16 +246,12 @@ class TreeBuilder(HTMLParser):
         super().__init__(convert_charrefs=True)
         self.root = Node("#document", [], None, 0)
         self.stack = [self.root]
-        self.comments = []  # (позиция строки, текст)
+        self.comments = []  # (строка, текст)
         self.errors = []
-        self.body_line = None
 
     def handle_starttag(self, tag, attrs):
-        line = self.getpos()[0]
-        node = Node(tag, attrs, self.stack[-1], line)
+        node = Node(tag, attrs, self.stack[-1], self.getpos()[0])
         self.stack[-1].children.append(node)
-        if tag == "body":
-            self.body_line = line
         if tag not in VOID:
             self.stack.append(node)
 
@@ -200,14 +268,12 @@ class TreeBuilder(HTMLParser):
         if tag in VOID:
             self.errors.append(f"строка {line}: лишний закрывающий </{tag}>")
             return
-        open_tags = [n.tag for n in self.stack[1:]]
-        if tag not in open_tags:
+        if tag not in [n.tag for n in self.stack[1:]]:
             self.errors.append(f"строка {line}: </{tag}> без открывающего тега")
             return
         while self.stack[-1].tag != tag:
             lost = self.stack.pop()
-            self.errors.append(
-                f"строка {lost.line}: <{lost.tag}> не закрыт (встретился </{tag}> в строке {line})")
+            self.errors.append(f"строка {lost.line}: <{lost.tag}> не закрыт (встретился </{tag}> в строке {line})")
         self.stack.pop()
 
     def handle_data(self, data):
@@ -222,8 +288,18 @@ def visible_text(node):
         return node
     if node.tag in HIDDEN_TAGS or "hidden" in node.attrs:
         return ""
-    sep = " " if node.tag in {"br", "p", "div", "li", "h1", "h2", "h3", "a", "span"} else ""
+    sep = "" if node.tag in INLINE_TAGS else " "
     return sep + "".join(visible_text(c) for c in node.children) + sep
+
+
+def stray_text(node, inside=False):
+    """Видимый текст вне секций SECTION_IDS."""
+    if isinstance(node, str):
+        return "" if inside else node
+    if node.tag in HIDDEN_TAGS or "hidden" in node.attrs:
+        return ""
+    inside = inside or (node.tag == "section" and node.attrs.get("id") in SECTION_IDS)
+    return "".join(stray_text(c, inside) for c in node.children)
 
 
 def find_all(root, pred):
@@ -234,9 +310,25 @@ def by_class(root, cls):
     return find_all(root, lambda n: cls in n.classes)
 
 
+def by_id(root, ident):
+    hits = [n for n in root.iter() if n.attrs.get("id") == ident]
+    return hits[0] if hits else None
+
+
+def basename(src):
+    return (src or "").split("?")[0].rsplit("/", 1)[-1]
+
+
+def words_re(phrase):
+    """Фраза целыми словами, без учёта регистра и вида пробелов."""
+    return re.compile(r"(?<!\w)" + r"\s+".join(map(re.escape, phrase.split())) + r"(?!\w)", re.I)
+
+
+# ======================================================================== main
+
 def main():
     if not INDEX.is_file():
-        print(f"ПРОБЛЕМА: нет файла {INDEX.relative_to(ROOT)} — страница не свёрстана")
+        print("ПРОБЛЕМА: нет файла index.html — страница не свёрстана")
         print("Итог: 1 проблема")
         return 1
 
@@ -246,7 +338,7 @@ def main():
     parser.close()
     root = parser.root
 
-    # --- 1. Разбор без незакрытых тегов ---
+    # --- [1] Разбор без незакрытых тегов ---
     for err in parser.errors:
         fail(f"[1] {err}")
     unclosed = [n for n in parser.stack[1:] if n.tag not in {"html", "body"}]
@@ -254,112 +346,16 @@ def main():
         fail(f"[1] строка {n.line}: <{n.tag}> не закрыт до конца файла")
     check(not parser.errors and not unclosed, "[1] разметка с ошибками вложенности (см. выше)")
     bodies = find_all(root, lambda n: n.tag == "body")
-    check(len(bodies) == 1, f"[1] ожидался один <body>, найдено {len(bodies)}")
-    if not bodies:
+    if not check(len(bodies) == 1, f"[1] ожидался один <body>, найдено {len(bodies)}"):
         return report()
     body = bodies[0]
     html = find_all(root, lambda n: n.tag == "html")
-    check(bool(html) and html[0].attrs.get("lang") == "ru", '[a11y] у <html> нет lang="ru"')
+    check(bool(html) and html[0].attrs.get("lang") == "ru", '[1] у <html> нет lang="ru"')
 
-    # --- 2. Тексты макета ---
-    page_text = norm(visible_text(body))
-    if DESKTOP_JSON is None:
-        # Публичная копия без служебной .autopilot: сверять тексты не с чем.
-        skipped.append(f"[2] эталон текстов макета ({DESKTOP_JSON_GLOB}) есть только в локальной "
-                       "копии — проверка текстов пропущена")
-    else:
-        frame = json.loads(DESKTOP_JSON.read_text(encoding="utf-8"))
-        texts = [n[5] for n in frame["nodes"] if n[0] == "p" and n[5].strip()]
-        check(len(texts) > 100, f"[2] в эталоне подозрительно мало текстов: {len(texts)}")
-        for text in texts:
-            text = text.split(" SPANS:")[0]  # служебная разметка размеров спанов
-            if DOUBLED_PHRASE in text:
-                text = text.replace(DOUBLED_PHRASE, FIXED_PHRASE)  # §8
-            check(norm(text) in page_text, f"[2] нет текста макета: «{text[:70]}»")
-
-    # §8 эталона не требует: нет «лечения лечения»; «Без КТ» — 01–06 по порядку, «С КТ» — 01–05.
-    check(norm(DOUBLED_PHRASE) not in page_text, "[2] §8: осталось двойное «лечения лечения»")
-    for cls, count in (("compare__col--bad", 6), ("compare__col--good", 5)):
-        cols = by_class(body, cls)
-        if check(len(cols) == 1, f"[2] нужен ровно один .{cls}, найдено {len(cols)}"):
-            nums = [norm(c.text()) for c in by_class(cols[0], "compare__circle")]
-            want = [f"{i:02d}" for i in range(1, count + 1)]
-            check(nums == want, f"[2] §8: номера в .{cls} {nums}, ожидалось {want}")
-
-    # --- 3. Картинки ---
-    imgs = find_all(body, lambda n: n.tag == "img")
-    check(len(imgs) >= 25, f"[3] картинок на странице {len(imgs)}, ожидалось не меньше 25")
-    for img in imgs:
-        src = img.attrs.get("src") or ""
-        where = f"<img src=\"{src}\"> (строка {img.line})"
-        alt = img.attrs.get("alt")
-        if alt is None:
-            fail(f"[3] {where}: нет alt")
-        elif not alt.strip():
-            check(img.attrs.get("aria-hidden") == "true",
-                  f"[3] {where}: пустой alt без aria-hidden=\"true\"")
-        for dim in ("width", "height"):
-            val = img.attrs.get(dim) or ""
-            check(val.isdigit() and int(val) > 0, f"[3] {where}: нет корректного {dim}")
-        check(bool(src) and not re.match(r"^[a-z]+:|^/", src, re.I),
-              f"[3] {where}: путь должен быть относительным")
-        check((ROOT / src.split("?")[0]).is_file(), f"[3] {where}: файл не найден")
-        check("/src/" not in src, f"[3] {where}: исходники assets/img/src/ в вёрстке не используются")
-        first_screen = any(a.tag == "header" or a.attrs.get("id") == "top"
-                           or "mobile-menu" in a.classes for a in img.ancestors())
-        if not first_screen:
-            check(img.attrs.get("loading") == "lazy", f"[3] {where}: ниже первого экрана нужен loading=\"lazy\"")
-
-    # --- 4. Ссылки и заглушки §7 ---
-    ids = {n.attrs["id"] for n in body.iter() if n.attrs.get("id")}
-    links = find_all(body, lambda n: n.tag == "a")
-    for a in links:
-        href = a.attrs.get("href")
-        where = f"<a> «{a.text().strip()[:30]}» (строка {a.line})"
-        if not check(href is not None, f"[4] {where}: нет href"):
-            continue
-        check(not FORBIDDEN_HOSTS.search(href), f"[4] {where}: выдуманный адрес мессенджера {href}")
-        if check(href.startswith("#"), f"[4] {where}: внешний адрес {href} — нужны заглушки §7"):
-            check(href in ALL_STUBS or href[1:] in ids, f"[4] {where}: якорь {href} никуда не ведёт")
-    for tag in find_all(root, lambda n: n.tag in {"link", "script", "img", "iframe", "form"}):
-        for attr in ("href", "src", "action"):
-            val = tag.attrs.get(attr) or ""
-            check(not FORBIDDEN_HOSTS.search(val), f"[4] <{tag.tag} {attr}=\"{val}\">: адрес мессенджера")
-
-    navs = by_class(body, "nav")
-    if check(len(navs) >= 1, "[4] нет меню .nav"):
-        nav_links = [a for nav in navs for a in find_all(nav, lambda n: n.tag == "a")]
-        check([a.attrs.get("href") for a in nav_links] == MENU_STUBS,
-              f"[4] ссылки .nav {[a.attrs.get('href') for a in nav_links]}, ожидалось {MENU_STUBS}")
-        check([a.text().strip() for a in nav_links] == MENU_TEXTS,
-              f"[4] пункты .nav {[a.text().strip() for a in nav_links]}, ожидалось {MENU_TEXTS}")
-    menus = by_class(body, "mobile-menu")
-    if check(len(menus) == 1, f"[4] нужен один .mobile-menu, найдено {len(menus)}"):
-        m_links = [a for a in find_all(menus[0], lambda n: n.tag == "a") if a.attrs.get("href") in MENU_STUBS]
-        check([a.attrs.get("href") for a in m_links] == MENU_STUBS,
-              f"[4] в .mobile-menu пункты {[a.attrs.get('href') for a in m_links]}, ожидалось {MENU_STUBS}")
-    btns = by_class(body, "btn")
-    check(sorted(b.attrs.get("href") or "" for b in btns) == sorted(BUTTON_STUBS),
-          f"[4] ссылки кнопок .btn {[b.attrs.get('href') for b in btns]}, ожидалось {BUTTON_STUBS}")
-
-    head_comments = [text for line, text in parser.comments
-                     if parser.body_line is None or line < parser.body_line]
-    replace_block = [c for c in head_comments if "ЗАМЕНИТЬ" in c]
-    if check(len(replace_block) == 1, "[4] в начале index.html нет комментария «ЗАМЕНИТЬ»"):
-        missing = [s for s in ALL_STUBS if s not in replace_block[0]]
-        check(not missing, f"[4] в комментарии «ЗАМЕНИТЬ» нет заглушек: {missing}")
-
-    # --- 5. Секции и заголовки ---
-    found = [n.attrs["id"] for n in body.iter() if n.attrs.get("id") in SECTION_IDS]
-    check(found == SECTION_IDS, f"[5] id секций {found}, ожидалось {SECTION_IDS}")
-    for sid in SECTION_IDS:
-        nodes = [n for n in body.iter() if n.attrs.get("id") == sid]
-        if nodes:
-            check(nodes[0].tag == "section", f"[5] #{sid} должен быть <section>, а не <{nodes[0].tag}>")
-            if sid != "top":
-                check(bool(find_all(nodes[0], lambda n: n.tag == "h2")), f"[5] в #{sid} нет h2")
-    h1 = find_all(body, lambda n: n.tag == "h1")
-    check(len(h1) == 1, f"[5] h1 на странице: {len(h1)}, нужен ровно один")
+    check_sections(body)
+    check_texts(root, body, raw)
+    check_images(body)
+    check_no_controls(root, body, raw)
 
     # --- Стили только в style.css ---
     for n in body.iter():
@@ -370,14 +366,229 @@ def main():
                   f"[стили] строка {n.line}: style=\"{style}\" — стили только в style.css")
 
     check_font(root)
-    check_radius(body)
-    check_facts(body)
-    check_phone_rows(body)
+    check_layout(body)
     check_hero_lines(body)
-    check_pairs(body)
     check_motion()
+    check_readme()
     return report()
 
+
+# ======================================================================== [5] секции
+
+def check_sections(body):
+    found = [n.attrs["id"] for n in body.iter() if n.tag == "section" and n.attrs.get("id")]
+    check(found == SECTION_IDS, f"[5] секции {found}, ожидалось {SECTION_IDS}")
+    for sid in SECTION_IDS:
+        node = by_id(body, sid)
+        if not check(node is not None, f"[5] нет секции #{sid}"):
+            continue
+        check(node.tag == "section", f"[5] #{sid} должен быть <section>, а не <{node.tag}>")
+        h2 = find_all(node, lambda n: n.tag == "h2")
+        if sid == "top":
+            check(not h2, "[5] в первом экране не должно быть h2")
+        else:
+            check(len(h2) == 1, f"[5] в #{sid} нужен ровно один h2, найдено {len(h2)}")
+            if h2:
+                check(norm(h2[0].text()) == norm(HEADINGS[sid]),
+                      f"[5] h2 в #{sid}: «{squash(h2[0].text())}», нужно «{HEADINGS[sid]}»")
+    h1 = find_all(body, lambda n: n.tag == "h1")
+    if check(len(h1) == 1, f"[5] h1 на странице: {len(h1)}, нужен ровно один"):
+        check(any(a.attrs.get("id") == "top" for a in h1[0].ancestors()), "[5] h1 должен быть в первом экране #top")
+        check(norm(h1[0].text()) == norm(H1), f"[5] h1: «{squash(h1[0].text())}», нужно «{H1}»")
+
+
+# ======================================================================== [2] тексты
+
+def check_texts(root, body, raw):
+    titles = find_all(root, lambda n: n.tag == "title")
+    title = squash("".join(c for c in titles[0].children if isinstance(c, str))) if titles else ""
+    check(title == TITLE, f"[2] <title> «{title}», нужно «{TITLE}»")
+    joined = norm("".join(t for texts in TEXTS.values() for t in texts))
+    metas = {(m.attrs.get("name") or m.attrs.get("property") or ""): m.attrs.get("content") or ""
+             for m in find_all(root, lambda n: n.tag == "meta")}
+    desc = metas.get("description", "")
+    if check(bool(desc.strip()), "[2] нет meta description"):
+        check(norm(desc) in joined, f"[2] meta description «{desc[:60]}…» — не текст ТЗ")
+
+    # Весь видимый текст — ровно тексты ТЗ по порядку секций: ничего не пропущено и ничего лишнего.
+    for sid, texts in TEXTS.items():
+        section = by_id(body, sid)
+        if section is None:
+            continue  # пропавшую секцию ловит [5]
+        page = norm(section.text())
+        pos = 0
+        for text in texts:
+            want = norm(text)
+            at = page.find(want, pos)
+            if at < 0:
+                where = " (есть, но не на своём месте)" if want in page else ""
+                fail(f"[2] #{sid}: нет текста ТЗ «{text[:70]}»{where}")
+                continue
+            check(at == pos, f"[2] #{sid}: лишний текст «{page[pos:at][:70]}» перед «{text[:40]}»")
+            pos = at + len(want)
+        check(pos >= len(page), f"[2] #{sid}: лишний текст в конце секции «{page[pos:][:70]}»")
+    outside = norm(stray_text(body))
+    check(not outside, f"[2] видимый текст вне секций: «{outside[:70]}»")
+
+    # Запрещённые тексты прежней редакции — нигде: ни в тексте, ни в title, meta, alt.
+    spots = [("текст", squash(body.text())), ("title", title)]
+    spots += [(f"meta {k}", v) for k, v in metas.items()]
+    spots += [(f"alt {basename(i.attrs.get('src'))}", i.attrs.get("alt") or "")
+              for i in find_all(body, lambda n: n.tag == "img")]
+    allowed = squash(" ".join(t for texts in TEXTS.values() for t in texts))
+    for phrase in FORBIDDEN_TEXTS + MENU_TEXTS:
+        pattern = words_re(phrase)
+        if pattern.search(allowed):
+            # Слова есть внутри текста ТЗ («Команда клиники…», «…или остались вопросы») — запрещены
+            # только отдельным элементом: пункт меню, заголовок «Остались вопросы?».
+            for n in body.iter():
+                if squash(n.text()).rstrip("?!.:").lower() == phrase.lower():
+                    fail(f"[2] остался элемент прежней редакции «{phrase}» (<{n.tag}>, строка {n.line})")
+            continue
+        for where, text in spots:
+            check(not pattern.search(text), f"[2] {where}: остался текст прежней редакции «{phrase}»")
+    check("видео" not in raw.lower(), "[2] в index.html осталось упоминание видео")
+    check("ЗАМЕНИТЬ" not in raw, "[2] в index.html остался блок «ЗАМЕНИТЬ» — заглушек в редакции 2 нет")
+
+    # Подписи иллюстраций — у своих картинок, без номеров «01–04».
+    clarify = by_id(body, "clarify")
+    if clarify is not None:
+        figures = find_all(clarify, lambda n: n.tag == "figure")
+        got = []
+        for fig in figures:
+            imgs = find_all(fig, lambda n: n.tag == "img")
+            caps = find_all(fig, lambda n: n.tag == "figcaption")
+            got.append((basename(imgs[0].attrs.get("src")) if imgs else None,
+                        squash(caps[0].text()) if caps else None))
+        check(got == CLARIFY_FIGURES, f"[2] #clarify: пары картинка—подпись {got}, ожидалось {CLARIFY_FIGURES}")
+        check(not re.search(r"(?<!\d)0[1-9](?!\d)", squash(clarify.text())),
+              "[2] #clarify: у иллюстраций не должно быть номеров «01–04»")
+    after = by_id(body, "after")
+    if after is not None:
+        got = []
+        for item in find_all(after, lambda n: n.tag == "li"):
+            imgs = find_all(item, lambda n: n.tag == "img")
+            heads = find_all(item, lambda n: n.tag == "h3")
+            paras = find_all(item, lambda n: n.tag == "p")
+            got.append((basename(imgs[0].attrs.get("src")) if imgs else None,
+                        squash(heads[0].text()) if heads else None,
+                        squash(paras[0].text()) if paras else None))
+        check(got == STEPS, f"[2] #after: шаги (картинка, заголовок, текст) {got}, ожидалось {STEPS}")
+    howto = by_id(body, "howto")
+    if howto is not None:
+        got = [(squash(h.text()), squash(p.text()))
+               for item in find_all(howto, lambda n: n.tag == "li")
+               for h in find_all(item, lambda n: n.tag == "h3")[:1]
+               for p in find_all(item, lambda n: n.tag == "p")[:1]]
+        check(got == HOWTO_ITEMS, f"[2] #howto: пункты (заголовок, текст) {got}, ожидалось {HOWTO_ITEMS}")
+
+
+# ======================================================================== [3] картинки
+
+def image_size(path):
+    """(ширина, высота) PNG или JPEG по заголовку файла; иначе None."""
+    try:
+        data = path.read_bytes()
+    except OSError:
+        return None
+    if data[:8] == b"\x89PNG\r\n\x1a\n":
+        return struct.unpack(">II", data[16:24])
+    if data[:2] != b"\xff\xd8":
+        return None
+    i = 2
+    while i + 9 < len(data):
+        if data[i] != 0xFF:
+            i += 1
+            continue
+        marker = data[i + 1]
+        if marker == 0xFF or marker == 0x01 or 0xD0 <= marker <= 0xD8:
+            i += 2 if marker != 0xFF else 1
+            continue
+        length = struct.unpack(">H", data[i + 2:i + 4])[0]
+        if 0xC0 <= marker <= 0xCF and marker not in (0xC4, 0xC8, 0xCC):
+            height, width = struct.unpack(">HH", data[i + 5:i + 9])
+            return width, height
+        i += 2 + length
+    return None
+
+
+def check_images(body):
+    imgs = find_all(body, lambda n: n.tag == "img")
+    seen = []
+    for sid, want in IMAGES.items():
+        section = by_id(body, sid)
+        if section is None:
+            continue
+        got = [basename(i.attrs.get("src")) for i in find_all(section, lambda n: n.tag == "img")]
+        check(got == want, f"[3] картинки в #{sid}: {got}, ожидалось {want}")
+        seen += find_all(section, lambda n: n.tag == "img")
+    stray = [basename(i.attrs.get("src")) for i in imgs if i not in seen]
+    check(not stray, f"[3] картинки вне секций: {stray}")
+
+    total, missing = 0, []
+    for img in imgs:
+        src = img.attrs.get("src") or ""
+        name = basename(src)
+        where = f"<img src=\"{src}\"> (строка {img.line})"
+        check(bool((img.attrs.get("alt") or "").strip()), f"[3] {where}: нужен осмысленный alt")
+        dims = []
+        for dim in ("width", "height"):
+            val = img.attrs.get(dim) or ""
+            if check(val.isdigit() and int(val) > 0, f"[3] {where}: нет корректного {dim}"):
+                dims.append(int(val))
+        check(bool(src) and not re.match(r"^[a-z]+:|^/", src, re.I), f"[3] {where}: путь должен быть относительным")
+        check(src.startswith("assets/img/") and "/src/" not in src,
+              f"[3] {where}: картинки — только из assets/img/ (не исходники assets/img/src/)")
+        check(name in NOT_JPEG_OK or name.endswith(".jpg"), f"[3] {where}: иллюстрации — оптимизированные .jpg")
+        path = ROOT / src.split("?")[0]
+        if not check(path.is_file(), f"[3] {where}: файл не найден"):
+            missing.append(name)
+            continue
+        total += path.stat().st_size
+        size = image_size(path)
+        if check(size is not None, f"[3] {where}: не PNG и не JPEG") and len(dims) == 2:
+            ratio, file_ratio = dims[0] / dims[1], size[0] / size[1]
+            check(abs(ratio / file_ratio - 1) <= RATIO_TOLERANCE,
+                  f"[3] {where}: width/height {dims[0]}×{dims[1]} не в пропорции файла {size[0]}×{size[1]}")
+            check(size[0] >= 1.9 * dims[0], f"[3] {where}: файл {size[0]} px — меньше 2× от width {dims[0]}")
+        first_screen = any(a.attrs.get("id") == "top" for a in img.ancestors())
+        if first_screen:
+            check(img.attrs.get("loading") != "lazy", f"[3] {where}: в первом экране без loading=\"lazy\"")
+        else:
+            check(img.attrs.get("loading") == "lazy", f"[3] {where}: ниже первого экрана нужен loading=\"lazy\"")
+    if not missing:
+        check(total <= IMAGES_BUDGET,
+              f"[3] картинки страницы весят {total / 1024:.0f} КБ — больше {IMAGES_BUDGET // 1024} КБ")
+
+
+# ======================================================================== [4] ни кнопок, ни ссылок
+
+def check_no_controls(root, body, raw):
+    for n in body.iter():
+        if n.tag in FORBIDDEN_TAGS:
+            fail(f"[4] строка {n.line}: <{n.tag}> — в редакции 2 нет ни ссылок, ни кнопок, ни форм")
+        role = n.attrs.get("role") or ""
+        check(role not in ("button", "link", "dialog", "navigation", "menu"),
+              f"[4] строка {n.line}: role=\"{role}\" — интерактивных элементов нет")
+        check("tabindex" not in n.attrs and "onclick" not in n.attrs,
+              f"[4] строка {n.line}: tabindex/onclick — интерактивных элементов нет")
+        retired = [c for c in n.classes if RETIRED_CLASS.search("." + c)]
+        check(not retired, f"[4] строка {n.line}: класс прежней редакции {retired}")
+        if n.tag == "header":
+            check(any(a.attrs.get("id") == "top" for a in n.ancestors()),
+                  f"[4] строка {n.line}: шапка вне первого экрана — меню в редакции 2 нет")
+    for path, label in ((STYLE, "style.css"), (SCRIPT, "main.js")):
+        if not check(path.is_file(), f"[4] нет файла {label}"):
+            continue
+        text = re.sub(r"/\*.*?\*/|(?<![:\w])//[^\n]*", "", path.read_text(encoding="utf-8"), flags=re.S)
+        retired = sorted({m.group(0) for m in RETIRED_CLASS.finditer(text)})
+        check(not retired, f"[4] {label}: остались классы прежней редакции (меню, кнопки, списки): {retired[:12]}")
+        if path == SCRIPT:
+            for needle in FORBIDDEN_JS:
+                check(needle not in text, f"[4] main.js: «{needle}» — меню, связка пунктов и всплывающих окон нет")
+
+
+# ======================================================================== [G05] шрифт
 
 def font_families(value):
     """«'Inter', Arial, sans-serif» → ['inter', 'arial', 'sans-serif']."""
@@ -385,10 +596,8 @@ def font_families(value):
 
 
 def check_font(root):
-    """G05 (таск F4): весь сайт набран Inter. Google Fonts подключён ровно строкой из interfaces.md
-    (никаких других семейств); в style.css шрифт задаётся только как Inter с запасными Arial и
-    sans-serif, body набран Inter; H1, H2, H3 и бейджи — вес 800 и −0,01em на всех ширинах;
-    README называет Inter."""
+    """G05: Google Fonts подключён ровно строкой из interfaces.md; в style.css шрифт — только Inter
+    с запасными Arial и sans-serif, body набран Inter; H1 и H2 — 800 и −0,01em на всех ширинах."""
     hrefs = [n.attrs.get("href") or "" for n in root.iter() if n.tag == "link"]
     sheets = [h for h in hrefs if "fonts.googleapis.com/css" in h]
     check(sheets == [FONT_HREF],
@@ -420,18 +629,16 @@ def check_font(root):
           f"[G05] body набран не Inter: font-family {body_font or 'не задан'}")
 
     media_rules = css_rules_media(css)
-    narrow = (TABLET_MEDIA, PHONE_MEDIA)
     for selector in HEADING_SELECTORS:
         for prop, want in (("font-weight", HEADING_WEIGHT), ("letter-spacing", HEADING_TRACKING)):
             base = css_value(media_rules, selector, prop, ("",))
             check(base == want, f"[G05] «{selector}» {prop}: {base or 'не задан'}, нужно {want}")
             for media, sel, decls in media_rules:  # планшет и телефон не перебивают
-                if prop in decls and selector in [s.strip() for s in sel.split(",")] and media in narrow:
+                if prop in decls and selector in [s.strip() for s in sel.split(",")] and media:
                     check(decls[prop] == want, f"[G05] «{sel}» {media}: {prop} {decls[prop]}, нужно {want}")
 
-    if check(README.is_file(), "[G05] нет README.md"):
-        check(FONT_NAME in README.read_text(encoding="utf-8"), "[G05] README не говорит, что шрифт — Inter")
 
+# ======================================================================== CSS-разбор
 
 def css_decls(block):
     """{свойство: значение} одного блока объявлений (пробелы схлопнуты, нижний регистр)."""
@@ -470,61 +677,6 @@ def css_rules_media(css):
     return rules
 
 
-def selector_classes(selector):
-    """Классы последнего (целевого) элемента каждого селектора из списка через запятую."""
-    out = []
-    for part in selector.split(","):
-        target = re.split(r"[\s>+~]+", part.strip())[-1]
-        out.append(set(re.findall(r"\.([\w-]+)", target)))
-    return out
-
-
-def check_radius(body):
-    """G02: «Смотреть видео» и четыре кнопки CTA скруглены var(--radius-btn) = 12px на всех ширинах;
-    фокусная обводка не отключена; у карточек и ячеек углы прямые."""
-    if not check(STYLE.is_file(), "[G02] нет файла assets/css/style.css"):
-        return
-    rules = css_rules(STYLE.read_text(encoding="utf-8"))
-    tokens = [d.get(RADIUS_TOKEN) for sel, d in rules if sel == ":root" and RADIUS_TOKEN in d]
-    check(tokens == [RADIUS_VALUE],
-          f"[G02] в :root нужен токен {RADIUS_TOKEN}: {RADIUS_VALUE}, найдено {tokens or 'ничего'}")
-    want = f"var({RADIUS_TOKEN})"
-    base = [d.get("border-radius") for sel, d in rules if {"btn"} in selector_classes(sel)]
-    check(want in base, f"[G02] у .btn нет border-radius: {want} (найдено {base or 'ничего'})")
-    for sel, d in rules:
-        targets = selector_classes(sel)
-        radius = d.get("border-radius")
-        if any(any(c == "btn" or c.startswith("btn--") for c in t) for t in targets):
-            check(radius in (None, want), f"[G02] «{sel}»: border-radius {radius} вместо {want}")
-            check(d.get("outline") not in ("none", "0"), f"[G02] «{sel}»: фокусная обводка отключена")
-        if any(t & set(SQUARE_BLOCKS) for t in targets):
-            check(radius in (None, "0", "0px"), f"[G02] «{sel}»: у карточек и ячеек углы прямые, а не {radius}")
-    # Кнопки G02 на странице: «Смотреть видео» и четыре кнопки CTA — все с классом btn.
-    btn_hrefs = sorted(n.attrs.get("href") for n in by_class(body, "btn"))
-    check(btn_hrefs == sorted(BUTTON_STUBS), f"[G02] кнопки .btn: {btn_hrefs}, ожидалось {sorted(BUTTON_STUBS)}")
-
-
-def check_hero_lines(body):
-    """G03 (таск F3): в первом экране нет вертикальных линий (декоративная сетка макета).
-    Разметка: внутри #top нет элементов с «line» в классе; стили: ни одного правила про
-    линии первого экрана и нет токена --hero-line (линии удалены, а не спрятаны)."""
-    tops = [n for n in body.iter() if n.attrs.get("id") == "top"]
-    if check(len(tops) == 1, "[G03] нет секции #top"):
-        lines = [n for n in tops[0].iter() if n is not tops[0] and any("line" in c for c in n.classes)]
-        check(not lines, "[G03] в первом экране остались линии: "
-                         f"{[(n.tag, ' '.join(n.classes), n.line) for n in lines]}")
-    if not STYLE.is_file():
-        return
-    rules = css_rules(STYLE.read_text(encoding="utf-8"))
-    for sel, decls in rules:
-        check(not re.search(r"\.hero[\w-]*line", sel), f"[G03] в style.css остались правила линий первого экрана: «{sel}»")
-        if ".hero" in sel:
-            check(px(decls.get("width")) != 1.0,
-                  f"[G03] «{sel}»: ширина 1px — похоже на вертикальную линию в первом экране")
-        if sel == ":root":
-            check("--hero-line" not in decls, "[G03] в :root остался токен --hero-line")
-
-
 def css_value(rules, selector, prop, medias):
     """Значение свойства у селектора (точно, в т. ч. внутри списка через запятую) — последнее
     по порядку файла среди правил, чьё @media входит в medias ("" — правила без @media)."""
@@ -539,134 +691,6 @@ def px(value):
     """«28px» → 28.0, иначе None."""
     m = re.fullmatch(r"(-?\d+(?:\.\d+)?)px", (value or "").strip())
     return float(m.group(1)) if m else None
-
-
-def flex_parts(value):
-    """Свойство flex → (grow, shrink, basis); не задано → значения по умолчанию (0, 1, auto)."""
-    if value is None:
-        return 0.0, 1.0, "auto"
-    if value in ("none", "auto"):
-        grow = 0.0 if value == "none" else 1.0
-        return grow, grow, "auto"
-    tokens = value.split()
-    try:
-        if len(tokens) == 3:
-            return float(tokens[0]), float(tokens[1]), tokens[2]
-        if len(tokens) == 2 and px(tokens[1]) is None and tokens[1] != "auto":
-            return float(tokens[0]), float(tokens[1]), "0%"
-        if len(tokens) == 2:
-            return float(tokens[0]), 1.0, tokens[1]
-        return (1.0, 1.0, tokens[0]) if px(tokens[0]) is not None else (float(tokens[0]), 1.0, "0%")
-    except ValueError:
-        return 0.0, 1.0, "auto"
-
-
-def png_size(path):
-    """(ширина, высота) PNG по заголовку IHDR или None."""
-    try:
-        head = path.read_bytes()[:24]
-    except OSError:
-        return None
-    if head[:8] != b"\x89PNG\r\n\x1a\n":
-        return None
-    return struct.unpack(">II", head[16:24])
-
-
-def facts_grid_height(ratios, width, columns, gap):
-    """Высота сетки ячеек шириной width: картинки по ширине ячейки, высота — по пропорциям файла."""
-    cell = (width - gap * (columns - 1)) / columns
-    rows = [ratios[i:i + columns] for i in range(0, len(ratios), columns)]
-    return sum(cell * max(row) for row in rows) + gap * (len(rows) - 1)
-
-
-def check_facts(body):
-    """G01 (таск F2): в секциях 4 и 6 под сеткой иллюстраций 3×2 нет пустой полосы.
-    Десктоп: высота списка постоянна (строки фиксированной высоты), значит у сетки постоянная
-    ширина в px, при которой две строки ячеек с зазором дают ту же высоту (±8 px).
-    Планшет: сетка постоянной ширины рядом со списком не уже 300 px, иначе перенос друг под
-    друга (flex-wrap); рядом строки списка растягиваются до высоты сетки, а естественная высота
-    списка (пункт — не больше двух строк текста) её не превышает больше чем на 8 px."""
-    if not STYLE.is_file():
-        return
-    rules = css_rules_media(STYLE.read_text(encoding="utf-8"))
-    desktop, tablet = ("",), ("", TABLET_MEDIA)
-
-    def val(selector, prop, medias):
-        return css_value(rules, selector, prop, medias)
-
-    # Пропорции ячеек — из самих файлов: высота ячейки = высота картинки по ширине ячейки.
-    sections, items = {}, set()
-    for sid in FACTS_SECTIONS:
-        sec = [n for n in body.iter() if n.attrs.get("id") == sid]
-        grids = by_class(sec[0], "facts__grid") if sec else []
-        if not check(len(grids) == 1, f"[G01] в #{sid} нужна ровно одна .facts__grid"):
-            continue
-        items.add(len(by_class(sec[0], "facts__item")))
-        ratios = []
-        for img in by_class(grids[0], "facts__img"):
-            size = png_size(ROOT / (img.attrs.get("src") or ""))
-            if check(size is not None, f"[G01] #{sid}: {img.attrs.get('src')} — не PNG"):
-                ratios.append(size[1] / size[0])
-        if check(len(ratios) == 6, f"[G01] в #{sid} ячеек с картинкой {len(ratios)}, ожидалось 6"):
-            sections[sid] = ratios
-    if not check(items == {6}, f"[G01] в списках секций 4 и 6 должно быть по 6 пунктов, найдено {sorted(items)}"):
-        return
-    rows = 6
-    cols = re.search(r"repeat\((\d+)", val(".facts__grid", "grid-template-columns", desktop) or "")
-    gap = px(val(".facts__grid", "gap", desktop))
-    if not check(bool(cols) and gap is not None,
-                 "[G01] у .facts__grid нет grid-template-columns: repeat(N, …) и gap в px"):
-        return
-    columns = int(cols.group(1))
-
-    # --- Десктоп ---
-    grow, _, basis = flex_parts(val(".facts__grid", "flex", desktop))
-    grid_w = px(val(".facts__grid", "width", desktop)) or px(basis)
-    item_h = px(val(".facts__item", "height", desktop))
-    last_h = px(val(".facts__item:last-child", "height", desktop)) or item_h
-    if check(grid_w is not None and grow == 0,
-             "[G01] десктоп: у .facts__grid нет постоянной ширины в px (width или flex: none + basis) — "
-             "сетка сужается вместе с экраном, а список из строк постоянной высоты нет: под сеткой пустая полоса"):
-        if check(item_h is not None, "[G01] десктоп: у .facts__item нет постоянной высоты в px"):
-            list_h = item_h * (rows - 1) + last_h
-            for sid, ratios in sections.items():
-                grid_h = facts_grid_height(ratios, grid_w, columns, gap)
-                check(abs(list_h - grid_h) <= FACTS_TOLERANCE,
-                      f"[G01] десктоп, #{sid}: список {list_h:.1f} px, сетка {grid_h:.1f} px "
-                      f"(ширина {grid_w:.0f}) — разница больше {FACTS_TOLERANCE} px")
-
-    # --- Планшет ---
-    check(val(".facts", "display", tablet) == "flex" and val(".facts", "flex-wrap", tablet) == "wrap",
-          "[G01] планшет: у .facts нет display: flex + flex-wrap: wrap — на узком планшете "
-          "список и сетка не встают друг под друга")
-    list_basis = px(flex_parts(val(".facts__list", "flex", tablet))[2])
-    check(list_basis is not None and list_basis >= FACTS_MIN_LIST,
-          f"[G01] планшет: flex-basis .facts__list {list_basis} — нужно не меньше {FACTS_MIN_LIST} px")
-    grid_basis = px(flex_parts(val(".facts__grid", "flex", tablet))[2])
-    if not check(grid_basis is not None, "[G01] планшет: у .facts__grid нет flex-basis в px"):
-        return
-    check(val(".facts", "align-items", tablet) in ("stretch", "normal"),
-          "[G01] планшет: у .facts нет align-items: stretch — список не тянется до высоты сетки")
-    check(val(".facts__list", "display", tablet) == "flex"
-          and val(".facts__list", "flex-direction", tablet) == "column",
-          "[G01] планшет: .facts__list не flex-колонка — строки не растягиваются до высоты сетки")
-    check(flex_parts(val(".facts__item", "flex", tablet))[0] > 0
-          and val(".facts__item", "height", tablet) in (None, "auto"),
-          "[G01] планшет: строки .facts__item не растягиваются (нужны flex-grow > 0 и height: auto)")
-    # Оценка сверху естественной высоты строки: рамка 1 px + поля + две строки текста
-    # + 4 px на выравнивание номера и текста по базовой линии.
-    min_h = px(val(".facts__item", "min-height", tablet)) or 0
-    pad = px((val(".facts__item", "padding", tablet) or "0px").split()[0]) or 0
-    line = max(px(val(".facts__text", "line-height", tablet)) or 0,
-               px(val(".facts__num", "line-height", tablet)) or 0)
-    row = max(min_h, 1 + 2 * pad + 2 * line + 4)
-    last_row = max(px(val(".facts__item:last-child", "min-height", tablet)) or min_h, row + 1)
-    list_h = row * (rows - 1) + last_row
-    for sid, ratios in sections.items():
-        grid_h = facts_grid_height(ratios, grid_basis, columns, gap)
-        check(list_h - grid_h <= FACTS_TOLERANCE,
-              f"[G01] планшет, #{sid}: список до {list_h:.1f} px выше сетки {grid_h:.1f} px "
-              f"(ширина {grid_basis:.0f}) больше чем на {FACTS_TOLERANCE} px — под сеткой полоса")
 
 
 def css_length(expr, basis):
@@ -802,108 +826,79 @@ def column_gap(rules, classes, medias):
     return px(value) if value else 0.0
 
 
-def row_fill(rules, classes, width, label):
-    """Ряд сетки при ширине width: колонки, пусто справа (px) и переполнение (px)."""
-    phone = ("", TABLET_MEDIA, PHONE_MEDIA)
-    template = cascade(rules, classes, "grid-template-columns", phone) or ""
-    gap = column_gap(rules, classes, phone)
-    try:
-        columns = grid_columns(template, width, gap)
-    except ValueError as err:
-        fail(f"[G04] {label}: grid-template-columns «{template}» не разобрать — {err}")
-        return None
-    gaps = gap * (len(columns) - 1)
-    mins = sum(low for low, _ in columns) + gaps
-    if any(high is None for _, high in columns):
-        used = max(width, mins)  # колонки fr забирают всю свободную ширину
-    else:
-        free = (width - gaps) / len(columns)
-        used = sum(max(low, min(high, free)) for low, high in columns) + gaps
-    return len(columns), width - used, template
+# ======================================================================== [G15] раскладка
 
-
-def check_phone_rows(body):
-    """G04 (таск F4): на телефоне (320–767) ряды доходят до правого края контента (±1 px).
-    Сетки 6 картинок секций 4 и 6 — на всю строку под списком, полными рядами: по 2 в ряд,
-    от ~560 px — по 3; карточки секций 2, 3, 7 и кнопки CTA (2×2) — тоже на всю ширину.
-    Ширина колонок вычисляется по grid-template-columns из style.css для каждой ширины экрана."""
+def check_layout(body):
+    """§10.8: отступы секций 72 / 56 / 32, первого экрана на телефоне 24 / 32. Ряды полные и на всю
+    ширину: колонки сеток GRIDS по grid-template-columns из style.css на каждой ширине; сумма
+    пунктов (широкий пункт — на все колонки) делится на число колонок; колонки fr — без пустого
+    места справа."""
     if not STYLE.is_file():
         return
     rules = css_rules_media(STYLE.read_text(encoding="utf-8"))
+    for media, want in SECTION_PADDING.items():
+        for prop in ("padding-top", "padding-bottom"):
+            got = css_value(rules, ".section", prop, (media,))
+            check(got == want, f"[G15] .section {media or 'десктоп'}: {prop} {got}, нужно {want}")
     phone = ("", TABLET_MEDIA, PHONE_MEDIA)
-    pad = px(cascade(rules, ["container"], "padding-left", phone)) or 0.0
-    pad_r = px(cascade(rules, ["container"], "padding-right", phone)) or 0.0
+    for prop, want in zip(("padding-top", "padding-bottom"), HERO_PHONE_PADDING):
+        got = cascade(rules, ["hero"], prop, phone)
+        check(got == want, f"[G15] .hero на телефоне: {prop} {got}, нужно {want}")
 
-    # Сетка фактов — отдельной строкой flex-контейнера .facts и растянута на всю строку.
-    grid_width = cascade(rules, ["facts__grid"], "width", phone)
-    grow, _, grid_basis = flex_parts(cascade(rules, ["facts__grid"], "flex", phone))
-    list_basis = px(flex_parts(cascade(rules, ["facts__list"], "flex", phone))[2]) or 0.0
-    facts_gap = column_gap(rules, ["facts"], phone)
-    check(grid_width in (None, "auto", "100%") and grow > 0,
-          f"[G04] телефон: .facts__grid width {grid_width}, flex-grow {grow} — сетка не тянется на всю строку")
-    check(cascade(rules, ["facts__grid"], "max-width", phone) in (None, "none", "100%"),
-          "[G04] телефон: у .facts__grid ограничена max-width — справа останется пусто")
-    check(cascade(rules, ["facts"], "flex-wrap", phone) == "wrap",
-          "[G04] телефон: у .facts нет flex-wrap: wrap — сетка не встаёт под список")
-
-    rows = [(["facts__grid"], "сетка картинок секций 4 и 6", True)]
-    for node in by_class(body, "cards"):
-        rows.append((node.classes, "карточки ." + " .".join(node.classes), False))
-    rows.append((["cta__buttons"], "кнопки CTA", False))
-    for screen in PHONE_WIDTHS:
-        width = screen - pad - pad_r
-        basis = px(grid_basis)
-        check(basis is None or list_basis + facts_gap + basis > width,
-              f"[G04] {screen} px: сетка картинок встаёт рядом со списком, а не под ним")
-        for classes, label, is_facts in rows:
-            filled = row_fill(rules, classes, width, label)
-            if filled is None:
-                continue
-            count, empty, template = filled
-            check(abs(empty) <= EDGE_TOLERANCE,
-                  f"[G04] {screen} px, {label}: справа пусто {empty:.0f} px "
-                  f"(контент {width:.0f} px, колонки «{template}»)" if empty > 0 else
-                  f"[G04] {screen} px, {label}: ряд шире контента на {-empty:.0f} px")
-            if is_facts:
-                want = 2 if screen < FACTS_THREE_FROM else 3
-                check(count == want,
-                      f"[G04] {screen} px, {label}: {count} в ряд, нужно {want} (6 картинок — полные ряды)")
-            elif "cta__buttons" in classes:
-                check(count == 2, f"[G04] {screen} px, кнопки CTA: {count} в ряд, нужно 2 (сетка 2×2)")
+    ranges = [("телефон", PHONE_WIDTHS, phone, 0), ("планшет", TABLET_WIDTHS, ("", TABLET_MEDIA), 1),
+              ("десктоп", DESKTOP_WIDTHS, ("",), 2)]
+    for block, counts in GRIDS.items():
+        nodes = by_class(body, block)
+        if not check(len(nodes) == 1, f"[G15] нужен ровно один .{block}, найдено {len(nodes)}"):
+            continue
+        items = [c for c in nodes[0].children if isinstance(c, Node)]
+        wide_cls = WIDE.get(block)
+        wide_items = [i for i in items if wide_cls and wide_cls in i.classes]
+        for label, widths, medias, idx in ranges:
+            pad = (px(cascade(rules, ["container"], "padding-left", medias)) or 0.0) + \
+                  (px(cascade(rules, ["container"], "padding-right", medias)) or 0.0)
+            template = cascade(rules, [block], "grid-template-columns", medias) or ""
+            gap = column_gap(rules, [block], medias)
+            span = cascade(rules, [wide_cls], "grid-column", medias) if wide_cls else None
+            for screen in widths:
+                width = min(screen, CONTENT_MAX) - pad
+                try:
+                    columns = grid_columns(template, width, gap) if template else [(0.0, None)]
+                except ValueError as err:
+                    fail(f"[G15] .{block}: grid-template-columns «{template}» не разобрать — {err}")
+                    break
+                count = len(columns)
+                if not check(count == counts[idx], f"[G15] {label} {screen} px, .{block}: {count} в ряд, "
+                                                   f"нужно {counts[idx]}"):
+                    break
+                check(all(high is None for _, high in columns),
+                      f"[G15] {label} {screen} px, .{block}: колонки не fr — справа останется пусто")
+                spans_all = span in ("1 / -1", "1/-1", f"span {count}")
+                cells = len(items) - len(wide_items) + len(wide_items) * (count if spans_all else 1)
+                check(cells % count == 0,
+                      f"[G15] {label} {screen} px, .{block}: {len(items)} пунктов в {count} колонки — неполный ряд"
+                      + (f" (у .{wide_cls} нужно grid-column: 1 / -1)" if wide_cls else ""))
 
 
-def check_pairs(body):
-    """G06 (таск F5): в секциях 4 и 6 каждый пункт списка — одна кнопка (<button type="button">
-    или role="button" + tabindex="0"), связанная с картинкой своего номера: aria-controls → id
-    ячейки .facts__cell этой же секции с тем же номером; в разметке aria-pressed="false";
-    шесть пунктов ведут на шесть разных картинок."""
-    for sid in PAIR_SECTIONS:
-        sec = [n for n in body.iter() if n.attrs.get("id") == sid]
-        if not sec:
-            continue  # пропавшую секцию ловит [5]
-        cells = {c.attrs["id"]: norm("".join(n.text() for n in by_class(c, "facts__cell-num")))
-                 for c in by_class(sec[0], "facts__cell") if c.attrs.get("id")}
-        targets = []
-        for item in by_class(sec[0], "facts__item"):
-            num = norm("".join(n.text() for n in by_class(item, "facts__num")))
-            where = f"[G06] #{sid}, пункт {num}"
-            controls = [n for n in item.iter() if n is not item and (
-                n.tag == "button" or (n.attrs.get("role") == "button" and n.attrs.get("tabindex") == "0"))]
-            if not check(len(controls) == 1, f"{where}: нужна одна кнопка (button или role=\"button\" "
-                                             f"+ tabindex=\"0\"), найдено {len(controls)}"):
-                continue
-            ctrl = controls[0]
-            if ctrl.tag == "button":
-                check(ctrl.attrs.get("type") == "button", f'{where}: у <button> нужен type="button"')
-            check(ctrl.attrs.get("aria-pressed") == "false", f'{where}: нет aria-pressed="false"')
-            target = ctrl.attrs.get("aria-controls")
-            targets.append(target)
-            if check(target is not None and target in cells,
-                     f"{where}: aria-controls «{target}» не ведёт на картинку .facts__cell этой секции"):
-                check(cells[target] == num, f"{where}: aria-controls ведёт на картинку {cells[target]}, а не {num}")
-        check(len(targets) == 6 and len(set(targets)) == 6,
-              f"[G06] #{sid}: пункты должны вести на 6 разных картинок, ведут на {targets}")
+# ======================================================================== [G03] без линий
 
+def check_hero_lines(body):
+    """G03: в первом экране нет вертикальных линий — ни разметки с «line» в классе, ни стилей."""
+    top = by_id(body, "top")
+    if top is not None:
+        lines = [n for n in top.iter() if n is not top and any("line" in c for c in n.classes)]
+        check(not lines, f"[G03] в первом экране остались линии: {[(n.tag, ' '.join(n.classes)) for n in lines]}")
+    if not STYLE.is_file():
+        return
+    for sel, decls in css_rules(STYLE.read_text(encoding="utf-8")):
+        check(not re.search(r"\.hero[\w-]*line", sel), f"[G03] в style.css правила линий первого экрана: «{sel}»")
+        if ".hero" in sel:
+            check(px(decls.get("width")) != 1.0, f"[G03] «{sel}»: ширина 1px — похоже на вертикальную линию")
+        if sel == ":root":
+            check("--hero-line" not in decls, "[G03] в :root остался токен --hero-line")
+
+
+# ======================================================================== [G06] анимация
 
 def transition_names(value, prop):
     """Свойства, которые меняет transition / transition-property (без времени и кривых)."""
@@ -919,11 +914,10 @@ def transition_names(value, prop):
 
 
 def check_motion():
-    """G06 (таск F5, §9 спеки): анимация бережная. В style.css есть
-    @media (prefers-reduced-motion: reduce): animation: none, transform: none и opacity: 1 у
-    скрытого до появления. Скрывать контент (opacity: 0, visibility: hidden — кроме ::before/::after)
-    можно только под классом .has-reveal, который ставит JS, — без JS всё видно сразу.
-    @keyframes меняют только transform и opacity; переходы не трогают размеры и отступы."""
+    """G06 (§9 спеки): в style.css есть @media (prefers-reduced-motion: reduce) — animation: none,
+    transform: none и opacity: 1 у скрытого до появления. Скрывать контент можно только под классом
+    .has-reveal, который ставит main.js (с IntersectionObserver и учётом «уменьшить движение») —
+    без JS всё видно сразу. @keyframes меняют только transform и opacity; переходы не трогают размеры."""
     if not STYLE.is_file():
         return
     rules = css_rules_media(STYLE.read_text(encoding="utf-8"))
@@ -947,13 +941,27 @@ def check_motion():
                   f"[G06] «{sel}» прячет контент без класса .{REVEAL_GATE} — без JS он не появится")
         for prop in ("transition", "transition-property"):
             for name in transition_names(d.get(prop) or "", prop):
-                check(not LAYOUT_PROPS.match(name),
-                      f"[G06] «{sel}» {prop}: {name} — переход сдвигает вёрстку")
+                check(not LAYOUT_PROPS.match(name), f"[G06] «{sel}» {prop}: {name} — переход сдвигает вёрстку")
+    if check(SCRIPT.is_file(), "[G06] нет assets/js/main.js"):
+        js = SCRIPT.read_text(encoding="utf-8")
+        for needle in ("IntersectionObserver", REVEAL_GATE, "prefers-reduced-motion"):
+            check(needle in js, f"[G06] main.js: нет «{needle}» — появление при прокрутке не бережное")
+
+
+# ======================================================================== README
+
+def check_readme():
+    if not check(README.is_file(), "[README] нет README.md"):
+        return
+    text = README.read_text(encoding="utf-8")
+    check("Что заменить" not in text, "[README] осталась таблица «Что заменить» — заглушек в редакции 2 нет")
+    for anchor in ("#telegram", "#whatsapp", "#max", "#vopros", "#video", "#uslugi"):
+        check(anchor not in text, f"[README] осталась заглушка {anchor}")
+    for needle in ("tools/check_site.py", FONT_NAME, "Пикассо"):
+        check(needle in text, f"[README] нет «{needle}»")
 
 
 def report():
-    for s in skipped:
-        print("ПРОПУСК:", s)
     for p in problems:
         print("ПРОБЛЕМА:", p)
     if problems:
