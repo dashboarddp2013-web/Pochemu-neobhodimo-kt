@@ -22,7 +22,8 @@
 на всех ширинах, у карточек и ячеек углы прямые (G02); в секциях 4 и 6 под сеткой
 иллюстраций нет пустой полосы (G01, таск F2): по числам style.css и размерам картинок
 высота сетки равна высоте списка на десктопе, а на планшете список и сетка
-переносятся друг под друга и строки списка растягиваются до высоты сетки.
+переносятся друг под друга и строки списка растягиваются до высоты сетки;
+в первом экране нет вертикальных линий — ни разметки, ни стилей (G03, таск F3).
 
 Эталон текстов ищется, а не прописан: первая по имени .autopilot/*/design/frame1-desktop.json
 (папку прогона можно переименовать). Служебной папки .autopilot нет в публичном репозитории —
@@ -338,6 +339,7 @@ def main():
 
     check_radius(body)
     check_facts(body)
+    check_hero_lines(body)
     return report()
 
 
@@ -410,6 +412,27 @@ def check_radius(body):
     # Кнопки G02 на странице: «Смотреть видео» и четыре кнопки CTA — все с классом btn.
     btn_hrefs = sorted(n.attrs.get("href") for n in by_class(body, "btn"))
     check(btn_hrefs == sorted(BUTTON_STUBS), f"[G02] кнопки .btn: {btn_hrefs}, ожидалось {sorted(BUTTON_STUBS)}")
+
+
+def check_hero_lines(body):
+    """G03 (таск F3): в первом экране нет вертикальных линий (декоративная сетка макета).
+    Разметка: внутри #top нет элементов с «line» в классе; стили: ни одного правила про
+    линии первого экрана и нет токена --hero-line (линии удалены, а не спрятаны)."""
+    tops = [n for n in body.iter() if n.attrs.get("id") == "top"]
+    if check(len(tops) == 1, "[G03] нет секции #top"):
+        lines = [n for n in tops[0].iter() if n is not tops[0] and any("line" in c for c in n.classes)]
+        check(not lines, "[G03] в первом экране остались линии: "
+                         f"{[(n.tag, ' '.join(n.classes), n.line) for n in lines]}")
+    if not STYLE.is_file():
+        return
+    rules = css_rules(STYLE.read_text(encoding="utf-8"))
+    for sel, decls in rules:
+        check(not re.search(r"\.hero[\w-]*line", sel), f"[G03] в style.css остались правила линий первого экрана: «{sel}»")
+        if ".hero" in sel:
+            check(px(decls.get("width")) != 1.0,
+                  f"[G03] «{sel}»: ширина 1px — похоже на вертикальную линию в первом экране")
+        if sel == ":root":
+            check("--hero-line" not in decls, "[G03] в :root остался токен --hero-line")
 
 
 def css_value(rules, selector, prop, medias):

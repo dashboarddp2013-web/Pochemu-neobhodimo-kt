@@ -22,7 +22,6 @@
   --hero-glow-1: #12305A;
   --hero-glow-2: #102542;
   --hero-glow-3: #101B29;
-  --hero-line: rgba(255, 255, 255, 0.14);
   --best-line: rgba(255, 255, 255, 0.5);
 
   /* G02: скругление кнопок «Смотреть видео» и CTA; карточки и ячейки — с прямыми углами. */
@@ -327,30 +326,6 @@ html.is-menu-open body {
   /* В макете снимок отражён: рука справа. */
   transform: scaleX(-1);
 }
-
-.hero__lines {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 40px;
-  right: 40px;
-  z-index: 1;
-  pointer-events: none;
-}
-
-.hero__line {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  background: var(--hero-line);
-}
-
-.hero__line:nth-child(1) { left: 0; }
-.hero__line:nth-child(2) { left: 24.11%; }
-.hero__line:nth-child(3) { left: 50%; }
-.hero__line:nth-child(4) { left: 75.89%; }
-.hero__line:nth-child(5) { left: 100%; }
 
 .hero__content {
   position: relative;
@@ -759,10 +734,6 @@ html.is-menu-open body {
   .hero__img {
     top: -26px;
     width: 63.184%;
-  }
-
-  .hero__lines {
-    display: none;
   }
 
   .hero__content {
