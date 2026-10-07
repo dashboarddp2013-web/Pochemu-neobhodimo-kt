@@ -28,6 +28,11 @@ var(--radius-btn) = 12px на всех ширинах, у карточек и я
 README называет Inter; на телефоне (320–767) сетки картинок секций 4 и 6, карточки и кнопки CTA
 доходят до правого края контента, сетки — полными рядами по 2, от ~560 px — по 3 (G04):
 по числам style.css ширина колонок вычисляется для каждой ширины экрана.
+Таск F5 (G06, §9 спеки): в секциях 4 и 6 каждый пункт списка — кнопка, связанная через
+aria-controls с картинкой своего номера, с aria-pressed; в style.css есть
+@media (prefers-reduced-motion: reduce), которое выключает анимации и перемещения и показывает
+скрытое до появления; контент скрывается только под классом html.has-reveal (его ставит main.js —
+без JS всё видно); @keyframes меняют только transform и opacity, переходы не трогают размеры.
 
 Эталон текстов ищется, а не прописан: первая по имени .autopilot/*/design/frame1-desktop.json
 (папку прогона можно переименовать). Служебной папки .autopilot нет в публичном репозитории —
@@ -87,6 +92,17 @@ HEADING_TRACKING = "-0.01em"
 PHONE_WIDTHS = (320, 380, 480, 600, 700, 767)
 EDGE_TOLERANCE = 1
 FACTS_THREE_FROM = 560  # px экрана: уже — сетка 6 картинок по 2 в ряд, шире — по 3
+
+# G06 (таск F5): связка «пункт списка ↔ картинка» и бережная анимация (§9 спеки).
+PAIR_SECTIONS = FACTS_SECTIONS
+REDUCED_MOTION = "prefers-reduced-motion: reduce"
+REVEAL_GATE = "has-reveal"  # класс на <html>, который ставит main.js; без него ничего не скрыто
+KEYFRAME_PROPS = {"transform", "opacity"}
+LAYOUT_PROPS = re.compile(
+    r"^(all|width|height|(min|max)-(width|height)|top|right|bottom|left|inset.*|margin.*|padding.*"
+    r"|border|border(-[a-z]+)?-width|font.*|line-height|letter-spacing|(row-|column-)?gap|grid.*|flex.*)$")
+TIMING = re.compile(r"^(-?\d*\.?\d+m?s|ease|ease-in|ease-out|ease-in-out|linear|step-start|step-end"
+                    r"|(cubic-bezier|steps|var)\(.*\))$")
 FORBIDDEN_HOSTS = re.compile(
     r"(t\.me|telegram\.(me|org|dog)|wa\.me|whatsapp\.com|max\.ru|vk\.com|instagram\.com|ok\.ru)",
     re.I,
@@ -358,6 +374,8 @@ def main():
     check_facts(body)
     check_phone_rows(body)
     check_hero_lines(body)
+    check_pairs(body)
+    check_motion()
     return report()
 
 
@@ -852,6 +870,85 @@ def check_phone_rows(body):
                       f"[G04] {screen} px, {label}: {count} в ряд, нужно {want} (6 картинок — полные ряды)")
             elif "cta__buttons" in classes:
                 check(count == 2, f"[G04] {screen} px, кнопки CTA: {count} в ряд, нужно 2 (сетка 2×2)")
+
+
+def check_pairs(body):
+    """G06 (таск F5): в секциях 4 и 6 каждый пункт списка — одна кнопка (<button type="button">
+    или role="button" + tabindex="0"), связанная с картинкой своего номера: aria-controls → id
+    ячейки .facts__cell этой же секции с тем же номером; в разметке aria-pressed="false";
+    шесть пунктов ведут на шесть разных картинок."""
+    for sid in PAIR_SECTIONS:
+        sec = [n for n in body.iter() if n.attrs.get("id") == sid]
+        if not sec:
+            continue  # пропавшую секцию ловит [5]
+        cells = {c.attrs["id"]: norm("".join(n.text() for n in by_class(c, "facts__cell-num")))
+                 for c in by_class(sec[0], "facts__cell") if c.attrs.get("id")}
+        targets = []
+        for item in by_class(sec[0], "facts__item"):
+            num = norm("".join(n.text() for n in by_class(item, "facts__num")))
+            where = f"[G06] #{sid}, пункт {num}"
+            controls = [n for n in item.iter() if n is not item and (
+                n.tag == "button" or (n.attrs.get("role") == "button" and n.attrs.get("tabindex") == "0"))]
+            if not check(len(controls) == 1, f"{where}: нужна одна кнопка (button или role=\"button\" "
+                                             f"+ tabindex=\"0\"), найдено {len(controls)}"):
+                continue
+            ctrl = controls[0]
+            if ctrl.tag == "button":
+                check(ctrl.attrs.get("type") == "button", f'{where}: у <button> нужен type="button"')
+            check(ctrl.attrs.get("aria-pressed") == "false", f'{where}: нет aria-pressed="false"')
+            target = ctrl.attrs.get("aria-controls")
+            targets.append(target)
+            if check(target is not None and target in cells,
+                     f"{where}: aria-controls «{target}» не ведёт на картинку .facts__cell этой секции"):
+                check(cells[target] == num, f"{where}: aria-controls ведёт на картинку {cells[target]}, а не {num}")
+        check(len(targets) == 6 and len(set(targets)) == 6,
+              f"[G06] #{sid}: пункты должны вести на 6 разных картинок, ведут на {targets}")
+
+
+def transition_names(value, prop):
+    """Свойства, которые меняет transition / transition-property (без времени и кривых)."""
+    names = []
+    for part in split_top(value, ","):
+        if prop == "transition-property":
+            names.append(part)
+            continue
+        name = next((t for t in split_top(part, " ") if not TIMING.match(t)), "all")
+        if name != "none":
+            names.append(name)
+    return names
+
+
+def check_motion():
+    """G06 (таск F5, §9 спеки): анимация бережная. В style.css есть
+    @media (prefers-reduced-motion: reduce): animation: none, transform: none и opacity: 1 у
+    скрытого до появления. Скрывать контент (opacity: 0, visibility: hidden — кроме ::before/::after)
+    можно только под классом .has-reveal, который ставит JS, — без JS всё видно сразу.
+    @keyframes меняют только transform и opacity; переходы не трогают размеры и отступы."""
+    if not STYLE.is_file():
+        return
+    rules = css_rules_media(STYLE.read_text(encoding="utf-8"))
+    reduced = [(sel, d) for media, sel, d in rules if REDUCED_MOTION in media]
+    if check(bool(reduced), f"[G06] в style.css нет @media ({REDUCED_MOTION})"):
+        check(any("none" in (d.get("animation"), d.get("animation-name")) for _, d in reduced),
+              f"[G06] @media ({REDUCED_MOTION}) не выключает анимации (animation: none)")
+        check(any(d.get("transform") == "none" for _, d in reduced),
+              f"[G06] @media ({REDUCED_MOTION}) не выключает перемещения (transform: none)")
+        check(any(f".{REVEAL_GATE}" in sel and d.get("opacity") == "1" for sel, d in reduced),
+              f"[G06] @media ({REDUCED_MOTION}) не показывает скрытое до появления (.{REVEAL_GATE} … opacity: 1)")
+    for media, sel, d in rules:
+        if media.startswith("@keyframes"):
+            extra = sorted(set(d) - KEYFRAME_PROPS)
+            check(not extra, f"[G06] {media} «{sel}»: анимируются {extra} — можно только transform и opacity")
+            continue
+        if REDUCED_MOTION in media or media == "@media print":
+            continue
+        if (d.get("opacity") == "0" or d.get("visibility") == "hidden") and "::" not in sel:
+            check(all(f".{REVEAL_GATE}" in part for part in sel.split(",")),
+                  f"[G06] «{sel}» прячет контент без класса .{REVEAL_GATE} — без JS он не появится")
+        for prop in ("transition", "transition-property"):
+            for name in transition_names(d.get(prop) or "", prop):
+                check(not LAYOUT_PROPS.match(name),
+                      f"[G06] «{sel}» {prop}: {name} — переход сдвигает вёрстку")
 
 
 def report():

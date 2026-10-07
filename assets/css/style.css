@@ -30,6 +30,12 @@
   /* G05: весь сайт — Inter (Google Fonts, 400/500/700/800). H1, H2, H3 и бейджи «50 / мкЗв» —
      800 и letter-spacing −0,01em (в каждом правиле заголовка), остальное — веса §4. */
   --font: 'Inter', Arial, sans-serif;
+
+  /* G06: анимация (§9 спеки) — кривая, фон подсвеченного пункта, тени при подъёме. */
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --navy-tint: rgba(14, 41, 75, 0.05);
+  --shadow-card: 0 12px 26px rgba(14, 41, 75, 0.14);
+  --shadow-lift: 0 14px 30px rgba(14, 41, 75, 0.2);
 }
 
 /* ---------- База ---------- */
@@ -1119,5 +1125,250 @@ html.is-menu-open body {
   html.is-menu-open,
   html.is-menu-open body {
     overflow: visible;
+  }
+}
+
+/* =========================================================
+   G06. Анимация (§9 спеки) — только transform и opacity для движения и появления;
+   подсветка пары меняет цвет, фон и тень (вёрстка не сдвигается).
+   ========================================================= */
+
+/* ---------- Первый экран при загрузке ---------- */
+/* fill-mode backwards: после въезда анимация больше не держит transform —
+   работают наведение на кнопку и отражение фото. */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-32px);
+  }
+}
+
+/* Фото в макете отражено (scaleX(-1)) — в обоих кадрах тот же список функций. */
+@keyframes hero-photo-in {
+  from {
+    opacity: 0;
+    transform: translateX(60px) scale(1.03) scaleX(-1);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1) scaleX(-1);
+  }
+}
+
+.header {
+  animation: fade-in 0.8s var(--ease-out) 0.1s backwards;
+}
+
+.hero__img {
+  animation: hero-photo-in 1s var(--ease-out) backwards;
+}
+
+.hero__title {
+  animation: slide-in-left 0.9s var(--ease-out) 0.15s backwards;
+}
+
+.hero__text {
+  animation: slide-in-left 0.9s var(--ease-out) 0.27s backwards;
+}
+
+.hero__content .btn {
+  animation: slide-in-left 0.9s var(--ease-out) 0.39s backwards;
+}
+
+/* ---------- Наведение: кнопки и карточки секций 2, 3, 7 ---------- */
+.btn {
+  position: relative;
+  transition: transform 0.25s var(--ease-out);
+}
+
+/* Затемняющий слой кнопки — проявляется при наведении. */
+.btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-btn);
+  background: var(--navy);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s var(--ease-out);
+}
+
+.card {
+  position: relative;
+  transition: transform 0.25s var(--ease-out);
+}
+
+/* Невидимый «хвост» под карточкой и ячейкой: приподнятый блок остаётся под курсором
+   и не дрожит у нижнего края. */
+.card::before,
+.facts__cell::before {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: 8px;
+}
+
+.card__img {
+  transition: box-shadow 0.25s var(--ease-out);
+}
+
+@media (hover: hover) {
+  .btn:hover {
+    transform: translateY(-2px);
+  }
+
+  .btn:hover::after {
+    opacity: 0.07;
+  }
+
+  .card:hover {
+    transform: translateY(-5px);
+  }
+
+  .card:hover .card__img {
+    box-shadow: var(--shadow-card);
+  }
+}
+
+/* ---------- Секции 4 и 6: пункт списка ↔ картинка ---------- */
+/* Пункт — кнопка (текст пункта). Её невидимый слой накрывает всю строку и ещё 8 px по бокам
+   (меньше полей контейнера — прокрутки вбок нет): нажимается и наводится вся строка, рамка
+   фокуса и фон подсветки совпадают. Классы is-lit (наведение, фокус с клавиатуры) и
+   is-active (нажатая пара) ставит main.js у пункта и у картинки. */
+.facts__item {
+  position: relative;
+  transition: background-color 0.25s var(--ease-out), box-shadow 0.25s var(--ease-out);
+}
+
+.facts__text {
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.facts__text::after {
+  content: "";
+  position: absolute;
+  inset: 0 -8px;
+}
+
+.facts__text:focus-visible {
+  outline: none;
+}
+
+.facts__text:focus-visible::after {
+  outline: 2px solid var(--navy);
+  outline-offset: -2px;
+}
+
+.facts__num,
+.facts__cell-num {
+  transition: color 0.25s var(--ease-out);
+}
+
+/* Фон строки выходит на 8 px за края (тенью — без прокрутки вбок). */
+.facts__item.is-lit,
+.facts__item.is-active {
+  background-color: var(--navy-tint);
+  box-shadow: -8px 0 var(--navy-tint), 8px 0 var(--navy-tint);
+}
+
+.facts__item.is-lit .facts__num,
+.facts__item.is-active .facts__num,
+.facts__cell.is-lit .facts__cell-num,
+.facts__cell.is-active .facts__cell-num {
+  color: var(--navy);
+}
+
+.facts__cell {
+  transition: transform 0.25s var(--ease-out);
+}
+
+/* Рамка 2 px и тень подсвеченной картинки — слой поверх неё, проявляется прозрачностью. */
+.facts__cell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--navy);
+  box-shadow: var(--shadow-lift);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s var(--ease-out);
+}
+
+.facts__cell.is-lit,
+.facts__cell.is-active {
+  z-index: 1;
+  transform: translateY(-6px) scale(1.03);
+}
+
+.facts__cell.is-lit::after,
+.facts__cell.is-active::after {
+  opacity: 1;
+}
+
+/* ---------- Появление при прокрутке ---------- */
+/* Скрывает только класс html.has-reveal — его ставит main.js; без JS всё видно сразу.
+   Класс reveal у элемента снимается после появления; --reveal-delay — очередь в ряду. */
+.has-reveal .reveal {
+  opacity: 0;
+  transform: translateY(24px);
+}
+
+.has-reveal .reveal.is-in {
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.6s var(--ease-out) var(--reveal-delay, 0s),
+    transform 0.6s var(--ease-out) var(--reveal-delay, 0s);
+}
+
+@media print {
+  .has-reveal .reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---------- Бережность: «уменьшить движение» ---------- */
+/* Ни перемещений, ни задержек, всё видно сразу; подсветка пары — только цветом и рамкой. */
+@media (prefers-reduced-motion: reduce) {
+  .header,
+  .hero__img,
+  .hero__title,
+  .hero__text,
+  .hero__content .btn {
+    animation: none;
+  }
+
+  .has-reveal .reveal,
+  .has-reveal .reveal.is-in {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .btn,
+  .card,
+  .facts__cell {
+    transition: none;
+  }
+
+  .btn:hover,
+  .card:hover,
+  .facts__cell.is-lit,
+  .facts__cell.is-active {
+    transform: none;
+  }
+
+  .card:hover .card__img,
+  .facts__cell::after {
+    box-shadow: none;
   }
 }
