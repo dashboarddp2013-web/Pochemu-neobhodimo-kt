@@ -1,0 +1,288 @@
+<!doctype html>
+<!--
+  ЗАМЕНИТЬ — все внешние адреса страницы пока заглушки-якоря.
+  Когда клиника пришлёт адреса, замените значение href у ссылок ниже
+  (например, href="#telegram" → href="https://…"). Таблица «Что заменить» — в README.md.
+
+  | Элемент                    | Заглушка    | Что нужно от заказчика                      |
+  |----------------------------|-------------|---------------------------------------------|
+  | Меню: Услуги               | #uslugi     | адрес страницы «Услуги»                     |
+  | Меню: Цены                 | #ceny       | адрес страницы «Цены»                       |
+  | Меню: Команда              | #komanda    | адрес страницы «Команда»                    |
+  | Меню: Акции                | #akcii      | адрес страницы «Акции»                      |
+  | Меню: Отзывы               | #otzyvy     | адрес страницы «Отзывы»                     |
+  | Меню: Пациентам            | #pacientam  | адрес страницы «Пациентам»                  |
+  | Меню: Контакты             | #kontakty   | адрес страницы «Контакты»                   |
+  | Кнопка «Смотреть видео»    | #video      | ссылка на видео                             |
+  | Кнопка «Задать вопрос»     | #vopros     | куда вести: форма, телефон или мессенджер   |
+  | Кнопка «Telegram»          | #telegram   | ссылка на аккаунт клиники в Telegram        |
+  | Кнопка «WhatsApp»          | #whatsapp   | ссылка на аккаунт клиники в WhatsApp        |
+  | Кнопка «Max»               | #max        | ссылка на аккаунт клиники в Max             |
+
+  Пункты меню повторяются дважды: в шапке (.nav) и в мобильном меню (.mobile-menu) —
+  меняйте адрес в обоих местах.
+-->
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Компьютерная томография — Денталь профи</title>
+  <meta name="description" content="Перед составлением плана лечения и выбора тактики лечения врач должен увидеть то, что невозможно определить при обычном осмотре.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script src="assets/js/main.js" defer></script>
+</head>
+<body>
+  <header class="header">
+    <div class="container header__inner">
+      <a class="logo" href="#top" aria-label="Денталь профи — в начало страницы">
+        <img class="logo__img" src="assets/img/logo-white.png" width="109" height="65" alt="Денталь профи">
+      </a>
+      <nav class="nav" aria-label="Основное меню">
+        <ul class="nav__list">
+          <li class="nav__item"><a class="nav__link" href="#uslugi">Услуги</a></li>
+          <li class="nav__item"><a class="nav__link" href="#ceny">Цены</a></li>
+          <li class="nav__item"><a class="nav__link" href="#komanda">Команда</a></li>
+          <li class="nav__item nav__item--split"><a class="nav__link nav__link--dot" href="#akcii">Акции</a></li>
+          <li class="nav__item"><a class="nav__link" href="#otzyvy">Отзывы</a></li>
+          <li class="nav__item"><a class="nav__link" href="#pacientam">Пациентам</a></li>
+          <li class="nav__item"><a class="nav__link" href="#kontakty">Контакты</a></li>
+        </ul>
+      </nav>
+      <button class="burger" type="button" aria-label="Открыть меню" aria-expanded="false" aria-controls="mobile-menu" data-menu-open>
+        <svg class="burger__icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" fill="none"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="mobile-menu" id="mobile-menu" role="dialog" aria-modal="true" aria-label="Меню" hidden data-menu>
+    <div class="container mobile-menu__top">
+      <button class="mobile-menu__close" type="button" aria-label="Закрыть меню" data-menu-close>
+        <svg class="mobile-menu__close-icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M5 5l14 14M19 5L5 19" stroke="currentColor" stroke-width="2" fill="none"/>
+        </svg>
+      </button>
+    </div>
+    <ul class="container mobile-menu__list">
+      <li class="mobile-menu__item"><a class="mobile-menu__link" href="#uslugi">Услуги</a></li>
+      <li class="mobile-menu__item"><a class="mobile-menu__link" href="#ceny">Цены</a></li>
+      <li class="mobile-menu__item"><a class="mobile-menu__link" href="#komanda">Команда</a></li>
+      <li class="mobile-menu__item"><a class="mobile-menu__link nav__link--dot" href="#akcii">Акции</a></li>
+      <li class="mobile-menu__item"><a class="mobile-menu__link" href="#otzyvy">Отзывы</a></li>
+      <li class="mobile-menu__item"><a class="mobile-menu__link" href="#pacientam">Пациентам</a></li>
+      <li class="mobile-menu__item"><a class="mobile-menu__link" href="#kontakty">Контакты</a></li>
+    </ul>
+  </div>
+
+  <main>
+    <!-- 1. Первый экран -->
+    <section class="hero" id="top">
+      <img class="hero__img" src="assets/img/hero-xray.png" width="1242" height="1428" alt="Рука держит панорамный рентгеновский снимок челюсти" fetchpriority="high">
+      <div class="hero__inner">
+        <div class="hero__lines" aria-hidden="true">
+          <span class="hero__line"></span>
+          <span class="hero__line"></span>
+          <span class="hero__line"></span>
+          <span class="hero__line"></span>
+          <span class="hero__line"></span>
+        </div>
+        <div class="container hero__content">
+          <h1 class="hero__title">Мы не лечим «на&nbsp;глаз»</h1>
+          <p class="hero__text">Перед составлением плана лечения и выбора тактики лечения врач должен увидеть то, что невозможно определить при обычном осмотре.</p>
+          <a class="btn btn--beige" href="#video">Смотреть видео</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Безопасно ли делать КТ? -->
+    <section class="section section--gray section--line" id="safety">
+      <div class="container">
+        <h2 class="h2">Безопасно ли делать КТ?</h2>
+        <p class="lead lead--safety">Современная компьютерная томография (КТ) обладает очень низкой лучевой нагрузкой и является мировым стандартом стоматологической диагностики.</p>
+        <div class="cards cards--safety">
+          <figure class="card">
+            <div class="card__media">
+              <img class="card__img" src="assets/img/safety-ct.png" width="385" height="356" alt="Пациент в аппарате компьютерной томографии" loading="lazy" decoding="async">
+              <p class="card__badge"><span class="card__badge-num">50</span> <span class="card__badge-unit">мкЗв</span></p>
+            </div>
+            <figcaption class="card__caption">Компьютерная томография = 50 микрозивертов.</figcaption>
+          </figure>
+          <figure class="card">
+            <div class="card__media">
+              <img class="card__img" src="assets/img/safety-plane.png" width="386" height="356" alt="Пассажирский самолёт в небе" loading="lazy" decoding="async">
+              <p class="card__badge"><span class="card__badge-num">3</span> <span class="card__badge-unit">часа</span></p>
+            </div>
+            <figcaption class="card__caption">Это около трех часов перелета на самолете.</figcaption>
+          </figure>
+          <figure class="card">
+            <div class="card__media">
+              <img class="card__img" src="assets/img/safety-chest.png" width="386" height="356" alt="Рентгенография грудной клетки" loading="lazy" decoding="async">
+              <p class="card__badge"><span class="card__badge-num">150</span> <span class="card__badge-unit">мкЗв</span></p>
+            </div>
+            <figcaption class="card__caption">В три раза меньше лучевой нагрузки, чем при рентгенографии грудной клетки.</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Почему врачу недостаточно обычного осмотра? -->
+    <section class="section section--gray" id="exam">
+      <div class="container">
+        <h2 class="h2">Почему врачу недостаточно обычного осмотра?</h2>
+        <div class="cards cards--exam">
+          <article class="card">
+            <img class="card__img" src="assets/img/exam-only.png" width="385" height="356" alt="Врач осматривает зубы зеркалом и зондом" loading="lazy" decoding="async">
+            <h3 class="card__title">Только осмотр</h3>
+            <p class="card__text">Врач видит только внешнюю картину.<br>Диагноз строится на ограниченном количестве информации.</p>
+          </article>
+          <article class="card">
+            <img class="card__img" src="assets/img/exam-ct.png" width="386" height="356" alt="Трехмерная модель челюстей по данным компьютерной томографии" loading="lazy" decoding="async">
+            <h3 class="card__title">Компьютерная томография</h3>
+            <p class="card__text">Врач получает полную трехмерную модель зубов и челюстей.<br>Он может оценить то, что невозможно увидеть при обычном осмотре или на двухмерном снимке.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Что позволяет увидеть КТ? -->
+    <section class="section section--white" id="see">
+      <div class="container">
+        <h2 class="h2">Что позволяет увидеть КТ?</h2>
+        <p class="lead">Большая часть этой информации недоступна при обычном осмотре.</p>
+        <div class="facts">
+          <ol class="facts__list">
+            <li class="facts__item"><span class="facts__num">01</span><span class="facts__text">Состояние костной ткани</span></li>
+            <li class="facts__item"><span class="facts__num">02</span><span class="facts__text">Скрытые воспалительные процессы</span></li>
+            <li class="facts__item"><span class="facts__num">03</span><span class="facts__text">Количество и состояние корней зубов</span></li>
+            <li class="facts__item"><span class="facts__num">04</span><span class="facts__text">Расположение гайморовых пазух</span></li>
+            <li class="facts__item"><span class="facts__num">05</span><span class="facts__text">Состояние височно-нижнечелюстного сустава</span></li>
+            <li class="facts__item"><span class="facts__num">06</span><span class="facts__text">Анатомические особенности пациента</span></li>
+          </ol>
+          <ul class="facts__grid">
+            <li class="facts__cell"><img class="facts__img" src="assets/img/see-01.png" width="248" height="228" alt="Костная ткань вокруг корней зуба" loading="lazy" decoding="async"><span class="facts__cell-num">01</span></li>
+            <li class="facts__cell"><img class="facts__img" src="assets/img/see-02.png" width="248" height="228" alt="Скрытое воспаление у корня зуба" loading="lazy" decoding="async"><span class="facts__cell-num">02</span></li>
+            <li class="facts__cell"><img class="facts__img" src="assets/img/see-03.png" width="248" height="228" alt="Корни зуба" loading="lazy" decoding="async"><span class="facts__cell-num">03</span></li>
+            <li class="facts__cell"><img class="facts__img" src="assets/img/see-04.png" width="248" height="227" alt="Гайморовы пазухи" loading="lazy" decoding="async"><span class="facts__cell-num">04</span></li>
+            <li class="facts__cell"><img class="facts__img" src="assets/img/see-05.png" width="248" height="227" alt="Височно-нижнечелюстной сустав" loading="lazy" decoding="async"><span class="facts__cell-num">05</span></li>
+            <li class="facts__cell"><img class="facts__img" src="assets/img/see-06.png" width="248" height="227" alt="Строение черепа и челюстей" loading="lazy" decoding="async"><span class="facts__cell-num">06</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Почему КТ влияет на качество лечения? -->
+    <section class="section section--gray2 compare" id="quality">
+      <div class="compare__photo">
+        <img class="compare__img" src="assets/img/xray-hands.jpg" width="1198" height="799" alt="Врач держит панорамный рентгеновский снимок и стоматологический зонд" loading="lazy" decoding="async">
+      </div>
+      <div class="container compare__inner">
+        <h2 class="h2 compare__heading">Почему КТ влияет на качество лечения?</h2>
+        <div class="compare__cols">
+          <div class="compare__col compare__col--bad">
+            <h3 class="compare__title">Без КТ</h3>
+            <ol class="compare__list">
+              <li class="compare__item"><span class="compare__circle">01</span><span class="compare__text">Осмотр</span></li>
+              <li class="compare__item"><span class="compare__circle">02</span><span class="compare__text">Предположение</span></li>
+              <li class="compare__item"><span class="compare__circle">03</span><span class="compare__text">Повышенный риск ошибки</span></li>
+              <li class="compare__item"><span class="compare__circle">04</span><span class="compare__text">Коррекция лечения</span></li>
+              <li class="compare__item"><span class="compare__circle">05</span><span class="compare__text">Дополнительное время</span></li>
+              <li class="compare__item"><span class="compare__circle">06</span><span class="compare__text">Дополнительные расходы</span></li>
+            </ol>
+          </div>
+          <div class="compare__col compare__col--good">
+            <h3 class="compare__title">С КТ</h3>
+            <ol class="compare__list">
+              <li class="compare__item"><span class="compare__circle">01</span><span class="compare__text">Полная диагностика</span></li>
+              <li class="compare__item"><span class="compare__circle">02</span><span class="compare__text">Точный диагноз</span></li>
+              <li class="compare__item"><span class="compare__circle">03</span><span class="compare__text">Правильная тактика лечения</span></li>
+              <li class="compare__item"><span class="compare__circle">04</span><span class="compare__text">Предсказуемый результат</span></li>
+              <li class="compare__item"><span class="compare__circle">05</span><span class="compare__text">Долговечность результата лечения</span></li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. В каких случаях КТ обязательно? -->
+    <section class="section section--white" id="cases">
+      <div class="container">
+        <h2 class="h2">В каких случаях КТ обязательно?</h2>
+        <p class="lead">Направление на КТ связано с современными стандартами лечения, а не с внутренними правилами клиники.</p>
+        <div class="facts">
+          <ol class="facts__list">
+            <li class="facts__item"><span class="facts__num">01</span><span class="facts__text">При лечении корневых каналов</span></li>
+            <li class="facts__item"><span class="facts__num">02</span><span class="facts__text">При имплантации</span></li>
+            <li class="facts__item"><span class="facts__num">03</span><span class="facts__text">При ортодонтическом лечении</span></li>
+            <li class="facts__item"><span class="facts__num">04</span><span class="facts__text">При удалении зубов, особенно зубов мудрости</span></li>
+            <li class="facts__item"><span class="facts__num">05</span><span class="facts__text">При лечении заболеваний десен</span></li>
+            <li class="facts__item"><span class="facts__num">06</span><span class="facts__text">При лечении височно-нижнечелюстного сустава</span></li>
+          </ol>
+          <ul class="facts__grid">
+            <li class="facts__cell"><img class="facts__img" src="assets/img/case-01.png" width="248" height="228" alt="Воспаление в корневых каналах зуба" loading="lazy" decoding="async"><span class="facts__cell-num">01</span></li>
+            <li class="facts__cell"><img class="facts__img" src="assets/img/case-02.png" width="248" height="228" alt="Зубной имплантат с коронкой" loading="lazy" decoding="async"><span class="facts__cell-num">02</span></li>
+            <li class="facts__cell"><img class="facts__img" src="assets/img/case-03.png" width="248" height="228" alt="Брекеты на зубах" loading="lazy" decoding="async"><span class="facts__cell-num">03</span></li>
+            <li class="facts__cell"><img class="facts__img" src="assets/img/case-04.png" width="248" height="228" alt="Зуб мудрости в челюсти" loading="lazy" decoding="async"><span class="facts__cell-num">04</span></li>
+            <li class="facts__cell"><img class="facts__img" src="assets/img/case-05.png" width="248" height="228" alt="Воспаление десны вокруг зуба" loading="lazy" decoding="async"><span class="facts__cell-num">05</span></li>
+            <li class="facts__cell"><img class="facts__img" src="assets/img/case-06.png" width="248" height="228" alt="Воспаление височно-нижнечелюстного сустава" loading="lazy" decoding="async"><span class="facts__cell-num">06</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. Что происходит после КТ? -->
+    <section class="section section--gray section--line" id="after">
+      <div class="container">
+        <h2 class="h2">Что происходит после КТ?</h2>
+        <div class="cards cards--steps">
+          <figure class="card">
+            <img class="card__img" src="assets/img/step-1.png" width="385" height="357" alt="Пациент проходит компьютерную томографию" loading="lazy" decoding="async">
+            <figcaption class="card__caption">1. Пациент делает КТ, клиника получает результаты.</figcaption>
+          </figure>
+          <figure class="card">
+            <img class="card__img" src="assets/img/step-2.png" width="386" height="357" alt="Врач изучает снимок на мониторе" loading="lazy" decoding="async">
+            <figcaption class="card__caption">2. Изучение исследования врачом и составление плана лечения с несколькими вариантами лечения (без пациента).</figcaption>
+          </figure>
+          <figure class="card">
+            <img class="card__img" src="assets/img/step-3.png" width="386" height="357" alt="Врач обсуждает план лечения с пациентом" loading="lazy" decoding="async">
+            <figcaption class="card__caption">3. Обсуждение плана лечения (на очной консультации или дистанционно).</figcaption>
+          </figure>
+          <figure class="card">
+            <img class="card__img" src="assets/img/step-4.png" width="386" height="357" alt="Стоматолог начинает лечение" loading="lazy" decoding="async">
+            <figcaption class="card__caption">4. Начало лечения.</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8. Лучшее лечение начинается с лучшей диагностики -->
+    <section class="section section--navy best" id="best">
+      <div class="container best__inner">
+        <div class="best__text">
+          <h2 class="h2 best__heading">Лучшее лечение начинается с&nbsp;лучшей диагностики</h2>
+          <div class="best__line" aria-hidden="true"></div>
+          <p class="lead best__lead">Компьютерная томография позволяет врачу увидеть полную картину, поставить максимально точный диагноз и подобрать наиболее эффективную тактику лечения.<br>Именно поэтому мы назначаем КТ до начала лечения.</p>
+        </div>
+        <img class="best__img" src="assets/img/ct-machine.png" width="792" height="640" alt="Аппарат компьютерной томографии" loading="lazy" decoding="async">
+      </div>
+    </section>
+
+    <!-- 9. Остались вопросы? -->
+    <section class="section section--cta cta" id="questions">
+      <div class="container">
+        <h2 class="h2 cta__heading">Остались вопросы?</h2>
+        <p class="cta__text">Готовы ответить на них ежедневно с&nbsp;09:00 до&nbsp;21:00.<br>Определим состояние, объясним все этапы и составим план лечения</p>
+        <div class="cta__buttons">
+          <a class="btn btn--white btn--wide" href="#vopros">Задать вопрос</a>
+          <a class="btn btn--white" href="#telegram"><img class="btn__icon" src="assets/img/icon-telegram.png" width="31" height="31" alt="" aria-hidden="true" loading="lazy" decoding="async">Telegram</a>
+          <a class="btn btn--white" href="#whatsapp"><img class="btn__icon" src="assets/img/icon-whatsapp.png" width="31" height="31" alt="" aria-hidden="true" loading="lazy" decoding="async">Whatsapp</a>
+          <a class="btn btn--white" href="#max"><img class="btn__icon" src="assets/img/icon-max.png" width="31" height="31" alt="" aria-hidden="true" loading="lazy" decoding="async">Max</a>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

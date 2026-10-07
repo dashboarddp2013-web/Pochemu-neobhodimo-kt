@@ -1,0 +1,52 @@
+# Публикация сайта на GitHub Pages.
+# Запускается при каждом push в ветку main и вручную (Actions → «Публикация на GitHub Pages» → Run workflow).
+# В артефакт попадают только файлы сайта: index.html, .nojekyll и assets/ (без исходников assets/img/src).
+# Служебные .autopilot/, .claude/, tools/, AGENTS.md, README.md наружу не публикуются.
+name: Публикация на GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Одна публикация за раз; начатую не прерываем.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Получить код
+        uses: actions/checkout@v4
+
+      - name: Собрать папку сайта
+        run: |
+          mkdir -p _site
+          cp index.html .nojekyll _site/
+          cp -R assets _site/
+          rm -rf _site/assets/img/src
+          echo "В публикацию попадёт:"
+          find _site -type f | sort
+
+      - name: Настроить GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Упаковать сайт
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Опубликовать
+        id: deployment
+        uses: actions/deploy-pages@v4
