@@ -1,4 +1,4 @@
-/* Денталь профи — страница «Почему необходимо КТ» (редакция 2, §10 спеки).
+/* Денталь профи — страница «Почему необходимо КТ» (редакция 3, §11 спеки; всё прочее — §10).
    Основной вид — телефон: страницу открывают по ссылке из мессенджера.
    Десктоп (≥1200) — стиль по умолчанию; ниже — планшет (<1200) и телефон (<768). */
 
@@ -6,9 +6,11 @@
 :root {
   --navy: #0E294B;
   --text: #333333;
+  --muted: #7B8A9D;
+  /* F10: мелкий текст на сером — --muted на --bg-gray даёт лишь ≈ 3,2:1; тот же оттенок темнее — 4,9:1. */
+  --muted-text: #5D6C7E;
   --bg-gray: #F5F5F5;
   --bg-gray-2: #F6F6F6;
-  --bg-gray-2-clear: rgba(246, 246, 246, 0);
   --white: #FFFFFF;
   --line: #D5D5D5;
   --section-line: #CDCDCD;
@@ -19,14 +21,24 @@
   --hero-glow-3: #101B29;
   --rule-light: rgba(255, 255, 255, 0.5);
 
-  /* §10.1: белая карточка с иллюстрацией на первом экране. */
+  /* G20: цвет логотипа — как в logo-intro.html. */
+  --logo-ink: #F4F8FC;
+
+  /* §10.1, G22: карточки со скруглением — иллюстрация первого экрана (белая) и ролик «Как КТ помогает…»
+     (фон почти чёрный, как у ролика: виден по краям, пока не подгрузился кадр-заставка). */
   --radius-card: 16px;
+  --video-bg: #08090C;
   --shadow-hero: 0 18px 44px rgba(0, 0, 0, 0.36);
+  --shadow-soft: 0 12px 32px rgba(14, 41, 75, 0.12);
+
+  /* G19: бейдж с дозой в углу иллюстрации. */
+  --badge-bg: rgba(255, 255, 255, 0.94);
+  --shadow-badge: 0 2px 10px rgba(14, 41, 75, 0.14);
 
   /* G05: весь сайт — Inter (Google Fonts, 400/500/700/800). H1 и H2 — 800 и −0,01em. */
   --font: 'Inter', Arial, sans-serif;
 
-  /* G06: анимация (§9 спеки) — кривая и тень при подъёме карточек. */
+  /* G06, G23: анимация — кривая и тень при подъёме карточек. */
   --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
   --shadow-card: 0 12px 26px rgba(14, 41, 75, 0.14);
 }
@@ -119,8 +131,8 @@ img {
   color: var(--white);
 }
 
-/* ---------- 1. Первый экран #top (§10.1) ---------- */
-/* Высота — по содержимому: 24 + логотип 65 + 32 + карточка ≈ 444 + 72 ≈ 640 px на десктопе. */
+/* ---------- 1. Первый экран #top (§10.1, G20, G21) ---------- */
+/* Высота — по содержимому: 24 + логотип ≈ 238 + 32 + карточка ≈ 444 + 72 ≈ 810 px на десктопе. */
 .hero {
   position: relative;
   overflow: hidden;
@@ -140,12 +152,7 @@ img {
   justify-content: center;
 }
 
-.hero__logo {
-  width: 109px;
-  height: 65px;
-}
-
-/* Текст слева, карточка справа; карточка не выше ≈ 444 px — первый экран ≤ 680. */
+/* Текст слева, карточка справа; карточка не выше ≈ 444 px. */
 .hero__body {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 480px);
@@ -154,10 +161,11 @@ img {
   margin-top: 32px;
 }
 
+/* G21: H1 — посередине между прежним H1 (60 / 66) и H2 (40 / 44), интерлиньяж пропорционально. */
 .hero__title {
   max-width: 900px;
-  font-size: 60px;
-  line-height: 66px;
+  font-size: 50px;
+  line-height: 55px;
   font-weight: 800;
   letter-spacing: -0.01em;
   text-transform: uppercase;
@@ -184,7 +192,94 @@ img {
   height: auto;
 }
 
-/* ---------- 2. Что исследование поможет уточнить #clarify (§10.2) ---------- */
+/* ---------- Логотип (G20): знак, «Денталь Профи», подпись — SVG из logo-intro.html ---------- */
+/* Ширина блока — ширина надписи: 230 px на десктопе, 120 px на планшете и телефоне.
+   Пропорции знака и подписи к надписи — как в logo-intro.html (238 / 327).
+   D05: подпись не мельче 10 px — при 230 px её высота 230 × 0,728 × 105 / 1725,9 ≈ 10,2 px;
+   ниже 1200 (логотип 120 px, подпись была бы ≈ 5 px) она скрыта. */
+.logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 230px;
+  transform-origin: 50% 38%;
+}
+
+.logo__mark {
+  display: block;
+  width: 72.8%;
+  height: auto;
+  overflow: visible;
+}
+
+.logo__word {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: 9%;
+  overflow: visible;
+  fill: var(--logo-ink);
+}
+
+.logo__motto {
+  display: block;
+  width: 72.8%;
+  height: auto;
+  margin-top: 3.7%;
+  overflow: visible;
+  fill: var(--logo-ink);
+}
+
+/* Линии знака идут по осевым и обрезаются точными контурами логотипа (clipPath);
+   в покое линия шире контура, чтобы клип закрыл его целиком. */
+.logo__stroke {
+  fill: none;
+  stroke: var(--logo-ink);
+  stroke-width: 36;
+  stroke-linecap: round;
+}
+
+.logo__spark {
+  fill: none;
+  stroke: var(--white);
+  stroke-width: 12;
+  stroke-linecap: round;
+}
+
+.logo__sparks {
+  stroke-opacity: 0;
+}
+
+.logo__sheen {
+  display: none;
+}
+
+.logo__sweep {
+  transform: translateX(-900px);
+}
+
+/* Скрытое до прорисовки состояние — только под html.has-logo-intro: его ставит main.js, если
+   анимация возможна и «уменьшить движение» выключено. Без JS логотип виден сразу целиком. */
+.has-logo-intro .logo {
+  transform: scale(1.05);
+}
+
+.has-logo-intro .logo__stroke {
+  stroke-width: 5.5;
+  stroke-dasharray: 1000 1500;
+  stroke-dashoffset: 1001;
+}
+
+.has-logo-intro .logo__sheen {
+  display: inline;
+}
+
+.has-logo-intro .logo__letter,
+.has-logo-intro .logo__glyph {
+  opacity: 0;
+}
+
+/* ---------- 2. Что исследование поможет уточнить #clarify (§10.2, G25) ---------- */
 /* Четыре иллюстрации в ряд на всю ширину (телефон — 2×2), подпись под картинкой, без номеров. */
 .gallery {
   display: grid;
@@ -207,50 +302,120 @@ img {
   color: var(--navy);
 }
 
-/* ---------- 3. Как КТ помогает спланировать лечение #planning (§10.3) ---------- */
-/* Фото справа во всю высоту секции, левый край плавно уходит в фон (как прежняя секция 5). */
+/* ---------- 3. Как КТ помогает спланировать лечение #planning (G22, F10) ---------- */
+/* Текст слева, справа — карточка 3:2 с роликом 1200×800 (на телефоне — под текстом на всю ширину).
+   Место под ролик держит aspect-ratio карточки — вёрстка не прыгает, пока грузится кадр-заставка. */
 .planning {
-  position: relative;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 480px);
+  column-gap: 64px;
   align-items: center;
-  min-height: 440px;
+}
+
+.planning__card {
   overflow: hidden;
+  aspect-ratio: 3 / 2;
+  border-radius: var(--radius-card);
+  background: var(--video-bg);
+  box-shadow: var(--shadow-soft);
 }
 
-.planning__text {
-  position: relative;
-  z-index: 1;
-  max-width: min(760px, 48%);
-}
-
-.planning__photo {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 50%;
-  right: 0;
-}
-
-.planning__photo::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  z-index: 1;
-  width: 160px;
-  background: linear-gradient(to right, var(--bg-gray-2), var(--bg-gray-2-clear));
-}
-
-.planning__img {
+/* Ролик и заставка — ровно 3:2, как карточка: cover ничего не обрезает и не оставляет полос. */
+.planning__video {
+  display: block;
   width: 100%;
-  max-width: none;
   height: 100%;
   object-fit: cover;
-  object-position: 35% 55%;
+  background: var(--video-bg);
 }
 
-/* ---------- 4 и 7. Текст + картинка #safety, #next (§10.4, §10.7) ---------- */
+/* Без JS Chrome и Safari сами рисуют у <video> панель кнопок (так браузер даёт запустить ролик без
+   скриптов). Здесь ролик — «живая картинка»: без JS остаётся кадр-заставка, кнопок нет. */
+.planning__video::-webkit-media-controls {
+  display: none !important;
+}
+
+/* ---------- 4. Что важно знать о лучевой нагрузке #safety (G18, G19) ---------- */
+/* Текст и две карточки-сравнения — одной колонкой шириной с текст блока (860). */
+.safety .lead {
+  max-width: 860px;
+}
+
+.dose {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 28px;
+  max-width: 860px;
+  margin-top: 28px;
+}
+
+/* Бейдж с дозой масштабируется вместе с карточкой (cqw — доля её ширины). */
+.dose__media {
+  position: relative;
+  container-type: inline-size;
+}
+
+.dose__img {
+  width: 100%;
+  height: auto;
+}
+
+.dose__badge {
+  position: absolute;
+  top: 16px;
+  top: max(8px, 4.8cqw);
+  right: 16px;
+  right: max(8px, 4.8cqw);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 12px 9px;
+  padding: max(5px, 2cqw) max(8px, 3cqw) max(6px, 2.2cqw);
+  border-radius: 12px;
+  background: var(--badge-bg);
+  box-shadow: var(--shadow-badge);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  color: var(--navy);
+}
+
+.dose__num {
+  font-size: 30px;
+  font-size: max(17px, 7.2cqw);
+  line-height: 1;
+}
+
+.dose__unit {
+  margin-top: 2px;
+  font-size: 18px;
+  font-size: max(12px, 4.4cqw);
+  line-height: 1.1;
+}
+
+.dose__caption {
+  margin-top: 14px;
+  font-size: 16px;
+  line-height: 20px;
+  font-weight: 500;
+  color: var(--navy);
+}
+
+/* «Нью-Йорк» не переносится по дефису. */
+.dose__city {
+  white-space: nowrap;
+}
+
+/* Примечание к цифрам — мелким текстом (14 / 18) на всех ширинах; цвет — --muted-text (контраст 4,9:1). */
+.safety__note {
+  max-width: 860px;
+  margin-top: 12px;
+  font-size: 14px;
+  line-height: 18px;
+  color: var(--muted-text);
+}
+
+/* ---------- 7. Текст + картинка #next (§10.7) ---------- */
 .split {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 386px);
@@ -279,8 +444,8 @@ img {
   margin-top: 28px;
 }
 
-/* ---------- 5. Как пройти исследование #howto (§10.5) ---------- */
-/* Две колонки; пятый пункт — на обе колонки с лёгким фоном: ряды полные. */
+/* ---------- 5. Как пройти исследование #howto (§10.5, G17) ---------- */
+/* Четыре пункта: две колонки, ряды полные (2×2). */
 .howto {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -292,14 +457,6 @@ img {
   padding-top: 24px;
   padding-bottom: 24px;
   border-top: 1px solid var(--line);
-}
-
-.howto__item--wide {
-  grid-column: 1 / -1;
-  margin-top: 8px;
-  padding: 24px 28px;
-  border-top: 0;
-  background: var(--bg-gray);
 }
 
 .howto__title {
@@ -373,7 +530,7 @@ img {
     padding-bottom: 56px;
   }
 
-  /* Первый экран: логотип слева 72×43, текст и карточка рядом */
+  /* Первый экран: логотип слева, текст и карточка рядом */
   .hero {
     padding-bottom: 56px;
   }
@@ -382,9 +539,13 @@ img {
     justify-content: flex-start;
   }
 
-  .hero__logo {
-    width: 72px;
-    height: 43px;
+  .logo {
+    width: 120px;
+  }
+
+  /* D05: при 120 px подпись вышла бы ≈ 5 px — нечитаемо; знак и «Денталь Профи» остаются. */
+  .logo__motto {
+    display: none;
   }
 
   .hero__body {
@@ -393,10 +554,11 @@ img {
     margin-top: 28px;
   }
 
+  /* G21: посередине между прежним H1 (32 / 40) и H2 (24 / 30). */
   .hero__title {
     max-width: 600px;
-    font-size: 32px;
-    line-height: 40px;
+    font-size: 28px;
+    line-height: 35px;
   }
 
   .hero__text {
@@ -412,11 +574,13 @@ img {
   }
 
   .planning {
-    min-height: 360px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 380px);
+    column-gap: 32px;
   }
 
-  .planning__photo::before {
-    width: 120px;
+  .dose {
+    gap: 20px;
+    margin-top: 24px;
   }
 
   .split {
@@ -445,10 +609,6 @@ img {
   .howto__item {
     padding-top: 20px;
     padding-bottom: 20px;
-  }
-
-  .howto__item--wide {
-    padding: 20px;
   }
 
   .howto__title {
@@ -524,29 +684,22 @@ img {
     margin-top: 10px;
   }
 
-  /* Фото — под текстом на всю ширину, высота не больше 220 px */
+  /* Ролик — под текстом, на всю ширину колонки */
   .planning {
-    display: block;
-    min-height: 0;
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 24px;
   }
 
-  .planning__text {
-    max-width: none;
+  /* Две карточки дозы — в ряд и на телефоне: сравнение видно сразу */
+  .dose {
+    gap: 12px;
+    margin-top: 20px;
   }
 
-  .planning__photo {
-    position: static;
-    margin-top: 24px;
-  }
-
-  .planning__photo::before {
-    content: none;
-  }
-
-  .planning__img {
-    height: auto;
-    max-height: 220px;
-    aspect-ratio: 1000 / 667;
+  .dose__caption {
+    margin-top: 8px;
+    font-size: 14px;
+    line-height: 18px;
   }
 
   .split,
@@ -575,14 +728,6 @@ img {
     padding-bottom: 16px;
   }
 
-  .howto__item--wide {
-    grid-column: auto;
-    margin-top: 0;
-    padding: 16px 0;
-    border-top: 1px solid var(--line);
-    background: none;
-  }
-
   /* Шаги столбиком; в шаге картинка слева, текст справа — страница короче */
   .steps {
     grid-template-columns: minmax(0, 1fr);
@@ -607,50 +752,27 @@ img {
 }
 
 /* =========================================================
-   G06. Анимация (§9 спеки) — только transform и opacity;
-   цвет и тень меняются плавно и вёрстку не трогают.
+   G06, G23. Анимация — только transform и opacity; цвет и тень
+   меняются плавно и вёрстку не трогают. У текста анимации появления нет.
    ========================================================= */
 
 /* ---------- Первый экран при загрузке ---------- */
-/* fill-mode backwards: после въезда анимация больше не держит transform. */
-@keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-}
-
-@keyframes slide-in-left {
-  from {
-    opacity: 0;
-    transform: translateX(-32px);
-  }
-}
-
+/* Заголовок и абзац видны сразу; въезжает только карточка с иллюстрацией, не дольше 0,6 с.
+   У логотипа своя прорисовка (main.js). fill-mode backwards: после въезда transform не держится. */
 @keyframes card-in {
   from {
     opacity: 0;
-    transform: translateX(60px) scale(1.03);
+    transform: translateX(40px) scale(1.02);
   }
 }
 
-.hero__logo {
-  animation: fade-in 0.8s var(--ease-out) 0.1s backwards;
-}
-
-.hero__title {
-  animation: slide-in-left 0.9s var(--ease-out) 0.15s backwards;
-}
-
-.hero__text {
-  animation: slide-in-left 0.9s var(--ease-out) 0.27s backwards;
-}
-
 .hero__card {
-  animation: card-in 1s var(--ease-out) 0.2s backwards;
+  animation: card-in 0.5s var(--ease-out) 0.1s backwards;
 }
 
 /* ---------- Наведение: карточки поднимаются ---------- */
 .gallery__item,
+.dose__item,
 .steps__item {
   position: relative;
   transition: transform 0.25s var(--ease-out);
@@ -658,6 +780,7 @@ img {
 
 /* Невидимый «хвост» под карточкой: приподнятая карточка не дрожит у нижнего края. */
 .gallery__item::before,
+.dose__item::before,
 .steps__item::before {
   content: "";
   position: absolute;
@@ -668,35 +791,39 @@ img {
 }
 
 .gallery__img,
+.dose__img,
 .steps__img {
   transition: box-shadow 0.25s var(--ease-out);
 }
 
 @media (hover: hover) {
   .gallery__item:hover,
+  .dose__item:hover,
   .steps__item:hover {
     transform: translateY(-5px);
   }
 
   .gallery__item:hover .gallery__img,
+  .dose__item:hover .dose__img,
   .steps__item:hover .steps__img {
     box-shadow: var(--shadow-card);
   }
 }
 
-/* ---------- Появление при прокрутке ---------- */
-/* Скрывает только класс html.has-reveal — его ставит main.js; без JS всё видно сразу.
+/* ---------- Появление при прокрутке (G23) ---------- */
+/* Только картинки и карточки без текста (список — в main.js), коротко и заранее: 0,25 с, сдвиг 10 px.
+   Скрывает только класс html.has-reveal — его ставит main.js; без JS всё видно сразу.
    Класс reveal у элемента снимается после появления; --reveal-delay — очередь в ряду. */
 .has-reveal .reveal {
   opacity: 0;
-  transform: translateY(24px);
+  transform: translateY(10px);
 }
 
 .has-reveal .reveal.is-in {
   opacity: 1;
   transform: none;
-  transition: opacity 0.6s var(--ease-out) var(--reveal-delay, 0s),
-    transform 0.6s var(--ease-out) var(--reveal-delay, 0s);
+  transition: opacity 0.25s var(--ease-out) var(--reveal-delay, 0s),
+    transform 0.25s var(--ease-out) var(--reveal-delay, 0s);
 }
 
 @media print {
@@ -707,11 +834,8 @@ img {
 }
 
 /* ---------- Бережность: «уменьшить движение» ---------- */
-/* Ни перемещений, ни задержек, всё видно сразу. */
+/* Ни перемещений, ни задержек, всё видно сразу; логотип — целиком, без прорисовки. */
 @media (prefers-reduced-motion: reduce) {
-  .hero__logo,
-  .hero__title,
-  .hero__text,
   .hero__card {
     animation: none;
   }
@@ -723,14 +847,36 @@ img {
     transition: none;
   }
 
+  .has-logo-intro .logo {
+    transform: none;
+  }
+
+  .has-logo-intro .logo__stroke {
+    stroke-width: 36;
+    stroke-dasharray: none;
+    stroke-dashoffset: 0;
+  }
+
+  .has-logo-intro .logo__sheen {
+    display: none;
+  }
+
+  .has-logo-intro .logo__letter,
+  .has-logo-intro .logo__glyph {
+    opacity: 1;
+  }
+
   .gallery__item,
+  .dose__item,
   .steps__item,
   .gallery__img,
+  .dose__img,
   .steps__img {
     transition: none;
   }
 
   .gallery__item:hover,
+  .dose__item:hover,
   .steps__item:hover {
     transform: none;
   }

@@ -15,11 +15,16 @@
   * на краях иллюстраций нет полос, пятен и штрихов: край сравнивается с рисунком за зоной
     чистки (дальше 8 px от края), а не сам с собой; на стыках тайлов нет швов;
   * в ct-machine.png нет пурпурных пикселей;
-  * лёгкие JPEG для телефона (таск F7, §10.8): 10 файлов с теми же именами, что у PNG, тот же
-    пиксельный размер, каждый ≤ 110 КБ, целый файл (маркеры SOI/EOI), а все картинки страницы
-    (10 JPEG + logo-white.png + xray-hands.jpg) вместе ≤ 1 МБ;
+  * лёгкие JPEG для телефона (таск F7, §10.8; F9, §11 — плюс safety-plane.jpg): 11 файлов с теми же
+    именами, что у PNG, тот же пиксельный размер, каждый ≤ 110 КБ, целый файл (маркеры SOI/EOI),
+    качество 82 (по таблице квантования, ±1), а все картинки страницы вместе ≤ 1 МБ (в редакции 3
+    на странице только эти JPEG: логотип первого экрана — SVG, фото рук со страницы убрано);
   * превью ссылки в мессенджере и лёгкое фото для телефона (таск F8, G16, G15): og-preview.jpg —
     1200×630, ≤ 150 КБ; xray-hands-1000.jpg — 1000×667 (половина xray-hands.jpg), ≤ 80 КБ; оба — целые JPEG;
+  * ролик «КТ в работе» для #planning (таск F10, G22, G15): assets/video/kt-video.mp4 — MP4 1200×800,
+    без звуковой дорожки, moov перед mdat (воспроизведение начинается до полной загрузки), ≤ 2,5 МБ;
+    кадр-заставка assets/video/kt-video-poster.jpg — целый JPEG 1200×800, входит в вес картинок
+    страницы; оба — побайтные копии файлов из корня проекта (если те лежат там);
   * есть .nojekyll, workflow GitHub Pages и README со ссылкой на tools/check_site.py и словом «Inter»
     (таблицы «Что заменить» и якорей-заглушек в редакции 2 нет — их проверка снята);
   * в tools/ и README.md нет зашитого имени папки прогона .autopilot/<дата-…> —
@@ -88,11 +93,25 @@ ICON_COLOR = (0x4A, 0x67, 0x8D)
 # Лёгкие JPEG для страницы (F7, §10.8): те же базовые имена и пиксельные размеры, что у одноимённых
 # PNG из ILLUSTRATIONS (размер берётся оттуда, а не из JPEG, который проверяется).
 JPEGS = ["step-1.jpg", "step-2.jpg", "step-3.jpg", "exam-ct.jpg", "see-01.jpg", "see-02.jpg",
-         "see-03.jpg", "see-04.jpg", "safety-ct.jpg", "ct-machine.jpg"]
+         "see-03.jpg", "see-04.jpg", "safety-ct.jpg", "safety-plane.jpg", "ct-machine.jpg"]
 JPEG_MAX_BYTES = 110 * 1000
-# Вес картинок страницы: 10 JPEG + логотип + фото рук (G15 — «быстро через мобильный интернет»).
-PAGE_EXTRA = ["logo-white.png", "xray-hands.jpg"]
+# Качество JPEG — 82 (F7; §11: safety-plane.jpg «тем же способом, качество 82»). Оценка — по таблице
+# квантования яркости против стандартной таблицы IJG; GDI+ при качестве 82 пишет таблицу IJG 81 — допуск ±1.
+JPEG_QUALITY = 82
+JPEG_QUALITY_TOL = 1
+# Вес картинок страницы (G15 — «быстро через мобильный интернет»): кроме JPEG выше, на странице
+# растровый только кадр-заставка ролика (F10; G20 — логотип SVG, G22 — фото рук убрано).
+# logo-white.png остаётся для превью. Пути — от assets/.
+PAGE_EXTRA = ["video/kt-video-poster.jpg"]
 PAGE_MAX_BYTES = 1000 * 1000
+
+# Ролик «КТ в работе» (F10, G22): файл → (ширина, высота, максимум байт). Сделан соседней сессией,
+# лежит в корне проекта; в assets/video/ — его побайтные копии (корневые файлы не публикуются).
+VIDEO_DIR = ROOT / "assets" / "video"
+VIDEO_FILE = "kt-video.mp4"
+VIDEO_POSTER = "kt-video-poster.jpg"
+VIDEO_SIZE = (1200, 800)
+VIDEO_MAX_BYTES = 2500 * 1000  # «≤ 2,5 МБ» — ролик грузится по мобильному интернету
 
 # Превью ссылки (og:image) и лёгкая версия фото рук для телефона (F8): (ширина, высота, максимум байт).
 PREVIEW_IMAGES = {
@@ -126,6 +145,52 @@ def png_header(path):
     w, h, depth, ctype = struct.unpack(">IIBB", data[16:26])
     trns = b"tRNS" in data[:data.find(b"IDAT")] if b"IDAT" in data else False
     return w, h, depth, ctype, trns
+
+
+# Стандартная таблица квантования яркости (JPEG, приложение K) в естественном порядке и порядок зигзага.
+IJG_LUMA = [16, 11, 10, 16, 24, 40, 51, 61, 12, 12, 14, 19, 26, 58, 60, 55, 14, 13, 16, 24, 40, 57, 69, 56,
+            14, 17, 22, 29, 51, 87, 80, 62, 18, 22, 37, 56, 68, 109, 103, 77, 24, 35, 55, 64, 81, 104, 113, 92,
+            49, 64, 78, 87, 103, 121, 120, 101, 72, 92, 95, 98, 112, 100, 103, 99]
+ZIGZAG = [0, 1, 8, 16, 9, 2, 3, 10, 17, 24, 32, 25, 18, 11, 4, 5, 12, 19, 26, 33, 40, 48, 41, 34, 27, 20, 13, 6,
+          7, 14, 21, 28, 35, 42, 49, 56, 57, 50, 43, 36, 29, 22, 15, 23, 30, 37, 44, 51, 58, 59, 52, 45, 38, 31,
+          39, 46, 53, 60, 61, 54, 47, 55, 62, 63]
+
+
+def jpeg_quality(path):
+    """Качество JPEG по шкале IJG (1–100): ближайшая масштабированная стандартная таблица к таблице
+    квантования яркости файла (DQT, таблица 0). None — таблицы нет или она 16-битная."""
+    data = path.read_bytes()
+    i = 2
+    while i + 4 <= len(data):
+        if data[i] != 0xFF:
+            i += 1
+            continue
+        marker = data[i + 1]
+        if marker in (0xD8, 0x01) or 0xD0 <= marker <= 0xD7:
+            i += 2
+            continue
+        length = struct.unpack(">H", data[i + 2:i + 4])[0]
+        if marker == 0xDA:
+            break
+        if marker == 0xDB:
+            seg, j = data[i + 4:i + 2 + length], 0
+            while j < len(seg):
+                precision, table = seg[j] >> 4, seg[j] & 15
+                size = 128 if precision else 64
+                values = list(seg[j + 1:j + 1 + size])
+                j += 1 + size
+                if table == 0 and not precision:
+                    natural = [0] * 64
+                    for k, v in enumerate(values):
+                        natural[ZIGZAG[k]] = v
+
+                    def distance(q):
+                        scale = 5000 // q if q < 50 else 200 - 2 * q
+                        return sum(abs(min(255, max(1, (base * scale + 50) // 100)) - v)
+                                   for base, v in zip(IJG_LUMA, natural))
+                    return min(range(1, 101), key=distance)
+        i += 2 + length
+    return None
 
 
 def jpeg_size(path):
@@ -434,7 +499,8 @@ def check_images():
 
 
 def check_jpegs():
-    """Лёгкие JPEG: есть, размер как у PNG, вес ≤ JPEG_MAX_BYTES, файл не оборван; сумма по странице ≤ PAGE_MAX_BYTES."""
+    """Лёгкие JPEG: есть, размер как у PNG, вес ≤ JPEG_MAX_BYTES, файл не оборван, качество JPEG_QUALITY;
+    сумма по странице ≤ PAGE_MAX_BYTES."""
     total, complete = 0, True
     for name in JPEGS:
         path = IMG / name
@@ -445,12 +511,15 @@ def check_jpegs():
         total += len(data)
         ok(len(data) <= JPEG_MAX_BYTES, "%s: %d байт, предел %d" % (name, len(data), JPEG_MAX_BYTES))
         ok(data[:2] == b"\xff\xd8" and data[-2:] == b"\xff\xd9", "%s — не целый JPEG (нет маркера SOI или EOI)" % name)
+        quality = jpeg_quality(path)
+        ok(quality is not None and abs(quality - JPEG_QUALITY) <= JPEG_QUALITY_TOL,
+           "%s: качество JPEG %s, нужно %d (±%d)" % (name, quality, JPEG_QUALITY, JPEG_QUALITY_TOL))
         want = ILLUSTRATIONS[name[:-4] + ".png"]
         dims = jpeg_size(path)
         if ok(dims is not None, "%s — не JPEG" % name):
             ok(dims == want, "%s: размер %d×%d, нужен %d×%d (как у %s.png)" % ((name,) + dims + want + (name[:-4],)))
     for name in PAGE_EXTRA:
-        path = IMG / name
+        path = ROOT / "assets" / name
         if path.is_file():
             total += path.stat().st_size
         else:
@@ -471,6 +540,72 @@ def check_preview_images():
         dims = jpeg_size(path)
         if ok(dims is not None, "%s — не JPEG" % name):
             ok(dims == (ew, eh), "%s: размер %d×%d, нужен %d×%d" % (name, dims[0], dims[1], ew, eh))
+
+
+def mp4_boxes(data, start=0, end=None):
+    """[(тип, начало содержимого, конец)] боксов MP4 одного уровня в data[start:end]."""
+    end = len(data) if end is None else end
+    boxes, i = [], start
+    while i + 8 <= end:
+        size, kind = struct.unpack(">I4s", data[i:i + 8])
+        head = 8
+        if size == 1:
+            size, head = struct.unpack(">Q", data[i + 8:i + 16])[0], 16
+        elif size == 0:
+            size = end - i
+        if size < head or i + size > end:
+            break
+        boxes.append((kind.decode("latin-1"), i + head, i + size))
+        i += size
+    return boxes
+
+
+def mp4_tracks(data, moov):
+    """[(тип дорожки из hdlr — 'vide', 'soun'…, (ширина, высота) из tkhd)] в боксе moov."""
+    tracks = []
+    for kind, s, e in mp4_boxes(data, moov[1], moov[2]):
+        if kind != "trak":
+            continue
+        handler, size = None, None
+        for sub, ss, se in mp4_boxes(data, s, e):
+            if sub == "tkhd":
+                w, h = struct.unpack(">II", data[se - 8:se])
+                size = (w >> 16, h >> 16)
+            elif sub == "mdia":
+                for leaf, ls, le in mp4_boxes(data, ss, se):
+                    if leaf == "hdlr":
+                        handler = data[ls + 8:ls + 12].decode("latin-1")
+        tracks.append((handler, size))
+    return tracks
+
+
+def check_video():
+    """F10: ролик и кадр-заставка в assets/video/ — копии файлов из корня, лёгкие и годные для потока."""
+    video, poster = VIDEO_DIR / VIDEO_FILE, VIDEO_DIR / VIDEO_POSTER
+    if ok(video.is_file(), "нет файла assets/video/%s" % VIDEO_FILE):
+        data = video.read_bytes()
+        ok(len(data) <= VIDEO_MAX_BYTES, "%s: %d байт, предел %d (2,5 МБ)" % (VIDEO_FILE, len(data), VIDEO_MAX_BYTES))
+        top = mp4_boxes(data)
+        kinds = [k for k, _, _ in top]
+        if ok(kinds[:1] == ["ftyp"] and "moov" in kinds and "mdat" in kinds,
+              "%s — не MP4 (боксы верхнего уровня %s)" % (VIDEO_FILE, kinds[:6])):
+            ok(kinds.index("moov") < kinds.index("mdat"),
+               "%s: moov после mdat — ролик не начнёт играть, пока не скачается целиком (нужен faststart)" % VIDEO_FILE)
+            tracks = mp4_tracks(data, top[kinds.index("moov")])
+            ok([t for t, _ in tracks] == ["vide"],
+               "%s: дорожки %s — нужна одна видеодорожка без звука" % (VIDEO_FILE, [t for t, _ in tracks]))
+            sizes = [s for t, s in tracks if t == "vide"]
+            ok(sizes == [VIDEO_SIZE], "%s: размер кадра %s, нужен %d×%d" % ((VIDEO_FILE, sizes) + VIDEO_SIZE))
+    if ok(poster.is_file(), "нет кадра-заставки assets/video/%s" % VIDEO_POSTER):
+        data = poster.read_bytes()
+        ok(data[:2] == b"\xff\xd8" and data[-2:] == b"\xff\xd9", "%s — не целый JPEG (нет маркера SOI или EOI)" % VIDEO_POSTER)
+        dims = jpeg_size(poster)
+        ok(dims == VIDEO_SIZE, "%s: размер %s, нужен %d×%d — как у ролика" % ((VIDEO_POSTER, dims) + VIDEO_SIZE))
+    for path in (video, poster):
+        source = ROOT / path.name
+        if path.is_file() and source.is_file():
+            ok(path.read_bytes() == source.read_bytes(),
+               "assets/video/%s — не побайтная копия %s из корня проекта" % (path.name, path.name))
 
 
 def check_publishing():
@@ -514,6 +649,7 @@ def main():
     check_images()
     check_jpegs()
     check_preview_images()
+    check_video()
     check_publishing()
     if problems:
         print("Найдено проблем: %d (проверок: %d)" % (len(problems), checks))

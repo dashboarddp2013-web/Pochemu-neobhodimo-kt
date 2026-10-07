@@ -11,9 +11,9 @@
   * фото и логотип: уменьшает исходники assets/img/src через tools/resize.ps1 (System.Drawing),
     PNG затем пережимает без потерь (адаптивные фильтры + zlib 9); там же делается xray-hands-1000.jpg —
     лёгкая версия фото рук для телефона (таск F8, srcset);
-  * лёгкие JPEG для мобильного интернета (таск F7): из готовых PNG иллюстраций делает одноимённые
-    .jpg того же размера (JPEG_NAMES, качество JPEG_QUALITY) тем же tools/resize.ps1 (-Step jpeg);
-    PNG остаются на месте;
+  * лёгкие JPEG для мобильного интернета (таск F7; F9 — плюс safety-plane для сравнения доз): из готовых
+    PNG иллюстраций делает одноимённые .jpg того же размера (JPEG_NAMES, качество JPEG_QUALITY) тем же
+    tools/resize.ps1 (-Step jpeg); PNG остаются на месте;
   * превью ссылки в мессенджере (таск F8): og-preview.jpg 1200x630 — логотип и иллюстрация step-2 на фоне
     страницы (шаг og в tools/resize.ps1, берёт готовые logo-white.png и step-2.png из assets/img).
 Исходники в assets/img/src не меняются. Только стандартная библиотека Python + Windows PowerShell 5.1.
@@ -65,8 +65,9 @@ ONLY = [a for a in sys.argv[1:] if not a.startswith("--")]
 # Лёгкие JPEG для страницы (F7, §10.8): базовые имена PNG из assets/img, у JPEG то же имя и тот же размер.
 # 82 — нижняя граница диапазона 82–90: на тонких тёмно-синих линиях и плоских фонах артефактов не видно
 # (проверено 1:1), а вес 10 файлов вместе ≈ 455 КБ; каждый ≤ 110 КБ (tools/check_assets.py).
+# safety-plane (F9, §11) — вторая карточка сравнения доз в «Что важно знать о лучевой нагрузке».
 JPEG_NAMES = ["step-1", "step-2", "step-3", "exam-ct", "see-01", "see-02", "see-03", "see-04",
-              "safety-ct", "ct-machine"]
+              "safety-ct", "safety-plane", "ct-machine"]
 JPEG_QUALITY = 82
 # Превью ссылки (F8, G16): 1200x630; 90 — свечение фона без ступенек, вес ≈ 100 КБ при пределе 150 КБ.
 OG_QUALITY = 90

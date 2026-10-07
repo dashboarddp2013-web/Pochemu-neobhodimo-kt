@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Проверка страницы сайта «Денталь профи» без браузера — редакция 2 («Почему необходимо КТ»).
+"""Проверка страницы сайта «Денталь профи» без браузера — редакция 3 («Почему необходимо КТ»).
 
 Запуск из корня сайта:
     PYTHONIOENCODING=utf-8 python tools/check_site.py
 
 Код возврата 0 — всё в порядке; иначе печатает строки «ПРОБЛЕМА: …» и возвращает 1.
 Только стандартная библиотека Python 3. Эталон текстов — в самом скрипте (TEXTS ниже), это ТЗ
-коммерческого директора слово в слово; служебная папка .autopilot для проверки не нужна.
+коммерческого директора с правками редакции 3 (§11 спеки) слово в слово; служебная папка .autopilot
+для проверки не нужна.
 
 Что проверяется:
   [1]  index.html разбирается html.parser без незакрытых и лишних тегов; lang="ru";
@@ -14,8 +15,8 @@
        ни одного недостающего и ни одного лишнего слова; запрещённых текстов прежней редакции
        (меню, видео, «Без КТ / С КТ», «мкЗв», «Остались вопросы», мессенджеры…) нет ни в тексте,
        ни в title, meta и alt; подписи иллюстраций и шаги «после КТ» стоят у своих картинок;
-  [3]  картинки: в каждой секции ровно свои файлы (иллюстрации — .jpg), файл существует, alt
-       не пустой, width/height в пропорции файла, ниже первого экрана loading="lazy";
+  [3]  картинки: в каждой секции ровно свои файлы (все — .jpg, PNG-логотипа больше нет), файл
+       существует, alt не пустой, width/height в пропорции файла, ниже первого экрана loading="lazy";
        общий вес картинок страницы ≤ 1 МБ;
   [4]  на странице нет ни одного <a> и <button>, меню, бургера, форм и всплывающих окон;
        в style.css и main.js не осталось меню, кнопок и связки «пункт ↔ картинка»;
@@ -29,9 +30,25 @@
   [G03] в первом экране нет вертикальных линий;
   [G16] превью ссылки в мессенджере: og:image (абсолютный адрес, 1200×630), og:url, og:type, og:locale,
         twitter:card, прежние og:title и og:description; файл картинки на месте;
-  [G15] фото рук в #planning: srcset 1000w + 2000w, sizes — телефон (до 767 px) берёт файл на 1000 px
-        при любой плотности экрана до 3×, десктоп на 2× — файл на 2000 px; width/height и alt прежние;
-  README: без таблицы «Что заменить», со ссылкой на tools/check_site.py, словом «Inter» и «Пикассо».
+  [G17–G19, G24, G25] тексты редакции 3 — в TEXTS; убранные формулировки (RETIRED_TEXTS) нигде не
+        встречаются; в #safety две карточки-сравнения: картинка, число и «мкЗв» в углу, подпись
+        (КТ — «20–200», D05); примечание 14/18, контраст цвета к фону секции ≥ 4,5:1;
+  [G20] логотип первого экрана — SVG из logo-intro.html (знак, «Денталь Профи», подпись; геометрия
+        путей совпадает с файлом-источником, если он лежит в корне), без PNG, демо-элементов, шрифтов
+        Golos Text / IBM Plex Mono и перехвата клавиш; ширина ≈ 230 px на десктопе и ≈ 120 px ниже 1200;
+        подпись «центр восстановления улыбок» не мельче 10 px: на десктопе её высота ≥ 10 px, ниже 1200
+        она скрыта (D05); скрытое до анимации — только под классом html.has-logo-intro (ставит main.js);
+  [G21] H1 — посередине между прежним H1 (60/66 и 32/40) и H2 (40/44 и 24/30): 50/55 и 28/35;
+  [G22] в #planning — ролик <video muted loop playsinline preload="none"> с кадром-заставкой (poster),
+        без autoplay, controls и src (адрес — в data-src, подставляет main.js при подходе блока к экрану,
+        rootMargin ≈ 300 px; при «уменьшить движение» и saveData ролик не грузится), aria-label;
+        файлы ролика и заставки на месте; карточка 3:2 со скруглением 16 px и тёмным фоном, на телефоне —
+        на всю ширину под текстом; exam-ct.jpg — только в шаге «Врач изучит данные»; фото рук нет;
+  [G23] у текста нет анимации появления: ни CSS-анимации, ни появления из main.js не касаются
+        элементов с текстом; появление картинок ≤ 0,35 с и сдвиг ≤ 12 px, срабатывает заранее
+        (rootMargin снизу ≥ 15 %); въезд первого экрана ≤ 0,6 с;
+  README: без таблицы «Что заменить», со ссылкой на tools/check_site.py, словами «Inter» и «Пикассо»,
+       с папкой ролика assets/video/.
 """
 import re
 import struct
@@ -45,7 +62,7 @@ STYLE = ROOT / "assets" / "css" / "style.css"
 SCRIPT = ROOT / "assets" / "js" / "main.js"
 README = ROOT / "README.md"
 
-# ---------------------------------------------------------------- Тексты ТЗ (§10.1–§10.7 спеки)
+# ---------------------------------------------------------------- Тексты ТЗ (§10.1–§10.7, правки §11 спеки)
 TITLE = "Почему необходимо КТ — Денталь профи"
 SECTION_IDS = ["top", "clarify", "planning", "safety", "howto", "after", "next"]
 
@@ -62,7 +79,7 @@ HEADINGS = {
 CLARIFY_FIGURES = [
     ("see-01.jpg", "Костная ткань"),
     ("see-03.jpg", "Корни зубов"),
-    ("see-04.jpg", "Анатомические образования"),
+    ("see-04.jpg", "Пазухи и нервные каналы"),
     ("see-02.jpg", "Очаги воспаления"),
 ]
 HOWTO_ITEMS = [
@@ -76,10 +93,16 @@ HOWTO_ITEMS = [
     ("Как результаты попадут врачу",
      "«Пикассо» отправляет результаты напрямую в нашу клинику по электронной почте. При посещении "
      "уточните, что исследование выполняется по направлению «Денталь Профи»."),
-    ("Если КТ уже есть",
-     "Передайте имеющееся исследование координатору. Врач оценит, достаточно ли его для вашей "
-     "ситуации и требуется ли дополнительная диагностика."),
+]  # G17: пункта «Если КТ уже есть» нет
+# G19: карточки-сравнения дозы в #safety — (картинка, число, единица, подпись).
+# D05: 20–100 мкЗв верно только для малого поля, снимок обеих челюстей в среднем ≈ 200 мкЗв.
+DOSE_CARDS = [
+    ("safety-ct.jpg", "20–200", "мкЗв", "КТ зубов — доза зависит от размера зоны"),
+    ("safety-plane.jpg", "50–80", "мкЗв", "Перелёт Москва — Нью-Йорк"),
 ]
+SAFETY_FACT = "Для сравнения: естественный радиационный фон — около 8 мкЗв в сутки."
+SAFETY_NOTE = ("Типичные значения по данным научных исследований. "
+               "Точную дозу вашего исследования подскажет врач.")
 STEPS = [
     ("step-1.jpg", "1. Получим исследование", "«Пикассо» направит результаты в клинику."),
     ("exam-ct.jpg", "2. Врач изучит данные",
@@ -98,56 +121,66 @@ TEXTS = {
     "clarify": [
         HEADINGS["clarify"],
         "В зависимости от задачи лечения врач оценивает состояние костной ткани, корней зубов "
-        "и окружающих структур, расположение важных анатомических образований и возможные очаги воспаления.",
-        "Результаты КТ дополняют осмотр и помогают обосновать дальнейшие решения.",
+        "и окружающих структур, расположение пазух и нервных каналов и возможные очаги воспаления.",
+        "Результаты КТ дополняют осмотр и помогают уточнить план лечения.",
         *[caption for _, caption in CLARIFY_FIGURES],
     ],
     "planning": [
         HEADINGS["planning"],
         "Врач сопоставляет исследование с результатами консультации, уточняет особенности вашей ситуации "
         "и определяет возможные варианты лечения. Это помогает заранее обсудить последовательность "
-        "действий и важные ограничения.",
+        "действий и особенности, которые нужно учесть при лечении.",
     ],
     "safety": [
         HEADINGS["safety"],
         "КТ связано с лучевой нагрузкой, поэтому врач назначает исследование для решения конкретной "
         "диагностической задачи. Доза зависит от области исследования, оборудования и выбранного протокола.",
-        "Пройдите исследование по выданному направлению. Если у вас уже есть КТ, сначала передайте его "
-        "в клинику: врач проверит, подходит ли оно для текущего планирования.",
+        "У современных томографов для зубов доза небольшая — она сопоставима с дозой, которую человек "
+        "получает в дальнем перелёте на самолёте.",
+        *[line for _, num, unit, caption in DOSE_CARDS for line in (num, unit, caption)],
+        SAFETY_FACT,
+        SAFETY_NOTE,
     ],
     "howto": [HEADINGS["howto"], *[line for item in HOWTO_ITEMS for line in item]],
     "after": [HEADINGS["after"], *[line for _, title, text in STEPS for line in (title, text)]],
     "next": [
         HEADINGS["next"],
-        "Пройдите КТ по выданному направлению — после получения результатов мы сможем перейти "
-        "к следующему этапу.",
+        "Пройдите КТ по выданному направлению. После получения результатов врач сможет уточнить план "
+        "лечения, а мы свяжемся с вами, чтобы согласовать дальнейшие действия.",
         "Если что-то мешает пройти исследование или остались вопросы, ответьте координатору в переписке, "
         "из которой вы открыли эту страницу. Мы поможем разобраться.",
     ],
 }
 
-# Тексты прежней редакции, которые ТЗ убирает (видимый текст, title, meta, alt).
-FORBIDDEN_TEXTS = ["Мы не лечим", "на глаз", "Без КТ", "С КТ", "В каких случаях", "мкЗв", "микрозиверт",
-                   "перелета", "перелёта", "грудной клетки", "Остались вопросы", "Смотреть видео", "видео",
+# Тексты прежних редакций, которые ТЗ убирает (видимый текст, title, meta, alt). «мкЗв» и перелёт
+# вернулись в редакции 3 (G19) — уже с числами из §11, поэтому их больше нет в этом списке.
+FORBIDDEN_TEXTS = ["Мы не лечим", "на глаз", "Без КТ", "С КТ", "В каких случаях", "микрозиверт",
+                   "3 часа", "грудной клетки", "Остались вопросы", "Смотреть видео", "видео",
                    "Задать вопрос", "Telegram", "WhatsApp", "Max", "Лучшее лечение", "Что позволяет увидеть",
                    "недостаточно обычного осмотра", "Безопасно ли"]
+# Формулировки редакции 2, которые редакция 3 убирает или заменяет (§11: G17, G18, G24, G25).
+RETIRED_TEXTS = ["Если КТ уже есть", "Передайте имеющееся исследование координатору", "Если у вас уже есть КТ",
+                 "Пройдите исследование по выданному направлению", "подходит ли оно для текущего планирования",
+                 "анатомических образований", "Анатомические образования", "обосновать дальнейшие решения",
+                 "важные ограничения", "мы сможем перейти к следующему этапу",
+                 "20–100", "КТ зубов на современном аппарате"]  # D05: прежние число и подпись КТ
 MENU_TEXTS = ["Услуги", "Цены", "Команда", "Акции", "Отзывы", "Пациентам", "Контакты"]
 
 # ---------------------------------------------------------------- Картинки (§10, таск F7 — JPEG)
 IMAGES = {
-    "top": ["logo-white.png", "step-2.jpg"],
+    "top": ["step-2.jpg"],  # G20: логотип — SVG в разметке, не картинка
     "clarify": [name for name, _ in CLARIFY_FIGURES],
-    "planning": ["xray-hands.jpg"],
-    "safety": ["safety-ct.jpg"],
+    "planning": [],  # G22: вместо картинки — ролик (<video>, VIDEO_* ниже)
+    "safety": [name for name, _, _, _ in DOSE_CARDS],
     "howto": [],
     "after": [name for name, _, _ in STEPS],
     "next": ["ct-machine.jpg"],
 }
-NOT_JPEG_OK = {"logo-white.png"}  # логотип с прозрачным фоном остаётся PNG
-IMAGES_BUDGET = 1024 * 1024       # байт: общий вес картинок страницы (§10.8)
+NOT_JPEG_OK = set()  # все картинки страницы — JPEG; PNG-логотип остался только в превью ссылки
+IMAGES_BUDGET = 1024 * 1024       # байт: общий вес картинок страницы (§10.8), с кадром-заставкой ролика
 RATIO_TOLERANCE = 0.02            # width/height разметки против пропорций файла
 
-# ---------------------------------------------------------------- Превью ссылки и лёгкое фото (F8, G16, G15)
+# ---------------------------------------------------------------- Превью ссылки (F8, G16)
 PAGE_URL = "https://dashboarddp2013-web.github.io/Pochemu-neobhodimo-kt/"
 OG_IMAGE_NAME = "og-preview.jpg"
 OG_TAGS = {  # <meta property="…" content="…">
@@ -160,21 +193,63 @@ OG_TAGS = {  # <meta property="…" content="…">
     "og:image:height": "630",
 }
 TWITTER_TAGS = {"twitter:card": "summary_large_image"}  # <meta name="…" content="…">
-PLANNING_PHOTO = {
-    "alt": "Врач держит панорамный снимок челюстей и стоматологический зонд",
-    "width": "1000",
-    "height": "667",
-    "srcset": {"xray-hands-1000.jpg": 1000, "xray-hands.jpg": 2000},  # файл → ширина в пикселях
+
+# ---------------------------------------------------------------- #planning: ролик (G22, §11, таск F10)
+PLANNING_RETIRED = "xray-hands"          # фото рук со снимком — со страницы убрано
+PLANNING_RATIO = "3 / 2"                 # пропорции ролика 1200×800
+PLANNING_RADIUS = "16px"                 # карточка со скруглением 16 px (как в первом экране)
+PLANNING_DARK_MAX = 0.03                 # относительная яркость фона карточки — тёмный, под цвет ролика
+VIDEO_SRC = "assets/video/kt-video.mp4"            # в data-src: адрес подставляет main.js
+VIDEO_POSTER = "assets/video/kt-video-poster.jpg"  # кадр-заставка — виден до загрузки и без JS
+VIDEO_LABEL = "Видео: 3D-модель черепа и срезы КТ"  # aria-label (подпись для скринридера)
+VIDEO_FLAGS = ("muted", "loop", "playsinline")     # «живая картинка»: без звука, по кругу, без полноэкрана
+VIDEO_BANNED = ("autoplay", "controls", "src")     # ни загрузки на старте, ни кнопок
+VIDEO_MARGIN_PX = (200, 400)             # rootMargin загрузки в px — «≈ 300 px до экрана»
+EXAM_CT = "exam-ct.jpg"                  # 3D-реконструкция — только в шаге «Врач изучит данные»
+
+# ---------------------------------------------------------------- Логотип (G20, §11)
+LOGO_SOURCE = "logo-intro.html"          # готовая анимация в корне проекта; файл не меняется
+LOGO_LABEL = "Денталь Профи"             # доступное имя логотипа (role="img" + aria-label)
+# viewBox трёх частей логотипа из logo-intro.html → (часть, сколько в ней <path>)
+LOGO_PARTS = {
+    "568.6 -13.4 876.3 889.7": ("знак", 3 + 6 + 6),   # 3 контура clipPath, 6 искр, 6 линий
+    "0 946.6 2010.9 254.2": ("надпись «Денталь Профи»", 12),
+    "140.5 1274.3 1725.9 105": ("подпись «центр восстановления улыбок»", 25),
 }
-SRCSET_DPRS = (1, 2, 3)  # плотности экрана телефонов; десктоп проверяется на 2×
+LOGO_WIDTH = {"десктоп": 230, "телефон": 120}  # px, ширина знака с надписью (≈, допуск LOGO_TOL; D05)
+LOGO_TOL = 5
+LOGO_MOTTO_BOX = "140.5 1274.3 1725.9 105"  # viewBox подписи: высота SVG = ширина × 105 / 1725,9
+LOGO_MOTTO_MIN_PX = 10                   # D05: подпись не мельче 10 px — иначе не показывается
+LOGO_GATE = "has-logo-intro"             # класс на <html>, который ставит main.js на время анимации
+LOGO_DEMO_FONTS = ("Golos", "IBM Plex", "IBM+Plex")
+LOGO_DEMO_CLASSES = {"orb", "dim", "kicker", "bar", "lockup", "sr"}
+LOGO_DEMO_IDS = {"replay", "slow"}
+STROKE_HIDING = ("stroke-dashoffset", "stroke-dasharray")  # прячут линии знака до прорисовки
+
+# ---------------------------------------------------------------- H1 (G21, §11)
+# Прежний H1 (§4) и H2 (§10.8) — (кегль, интерлиньяж); новый H1 — среднее, интерлиньяж пропорционально.
+H1_PREV = {"": (60, 66), "@media (max-width: 1199.98px)": (32, 40)}
+H2_SPEC = {"": (40, 44), "@media (max-width: 1199.98px)": (24, 30)}
+
+# ---------------------------------------------------------------- Появление без текста (G23, §11)
+REVEAL_MAX_S = 0.35        # появление картинок и карточек, с
+REVEAL_MAX_SHIFT = 12      # px, сдвиг при появлении
+REVEAL_MIN_MARGIN = 15     # %, rootMargin снизу — срабатывает до того, как элемент дошёл до экрана
+HERO_ENTRANCE_MAX_S = 0.6  # въезд первого экрана (кроме логотипа), с
+
+# ---------------------------------------------------------------- Примечание к дозам (G19, §11)
+NOTE_STYLE = {"font-size": "14px", "line-height": "18px"}
+NOTE_MIN_CONTRAST = 4.5    # WCAG AA для мелкого текста: цвет примечания к фону секции (F10)
+MUTED = "#7b8a9d"          # §3: --muted (сам токен не меняется)
 
 # ---------------------------------------------------------------- Нет кнопок, ссылок и меню (§10.9)
 FORBIDDEN_TAGS = {"a", "button", "nav", "form", "input", "select", "textarea", "iframe", "dialog",
-                  "video", "audio", "embed", "object"}
+                  "audio", "embed", "object"}  # <video> — один, в #planning (check_planning_video)
 RETIRED_BLOCKS = ("nav", "burger", "mobile-menu", "btn", "facts", "compare", "best", "cta", "card")
 RETIRED_CLASS = re.compile(r"\.(%s)(?![\w-])|\.(%s)(__|--)" % ("|".join(RETIRED_BLOCKS), "|".join(RETIRED_BLOCKS)))
 FORBIDDEN_JS = ("data-menu", "is-menu-open", "aria-expanded", "data-facts", "aria-pressed",
-                "setInterval", "alert(", "confirm(", "prompt(", "window.open", "showModal")
+                "setInterval", "alert(", "confirm(", "prompt(", "window.open", "showModal",
+                "keydown", "keyup", "keypress")  # G20: клавиши R / пробел из демо не переносятся
 
 # ---------------------------------------------------------------- Шрифт (G05, таск F4)
 FONT_HREF = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap"
@@ -194,8 +269,8 @@ TABLET_WIDTHS = (768, 1024, 1199)
 DESKTOP_WIDTHS = (1200, 1440, 1710, 1920)
 CONTENT_MAX = 1710
 # Ряды: блок-сетка → колонок на (телефоне, планшете, десктопе); WIDE — пункт на все колонки.
-GRIDS = {"gallery": (2, 4, 4), "howto": (1, 2, 2), "steps": (1, 3, 3)}
-WIDE = {"howto": "howto__item--wide"}
+GRIDS = {"gallery": (2, 4, 4), "howto": (1, 2, 2), "steps": (1, 3, 3), "dose": (2, 2, 2)}
+WIDE = {}  # G17: в «Как пройти исследование» 4 пункта — сетка 2×2 без широкого пятого
 
 # ---------------------------------------------------------------- Анимация (G06, таск F5)
 REDUCED_MOTION = "prefers-reduced-motion: reduce"
@@ -381,7 +456,9 @@ def main():
     check_texts(root, body, raw)
     check_images(body)
     check_preview(root)
-    check_planning_srcset(body)
+    check_planning_video(body, raw)
+    check_dose_cards(body)
+    check_logo(root, body, raw)
     check_no_controls(root, body, raw)
 
     # --- Стили только в style.css ---
@@ -393,9 +470,11 @@ def main():
                   f"[стили] строка {n.line}: style=\"{style}\" — стили только в style.css")
 
     check_font(root)
+    check_hero_title()
     check_layout(body)
     check_hero_lines(body)
     check_motion()
+    check_text_motion(body)
     check_readme()
     return report()
 
@@ -463,7 +542,7 @@ def check_texts(root, body, raw):
     spots += [(f"alt {basename(i.attrs.get('src'))}", i.attrs.get("alt") or "")
               for i in find_all(body, lambda n: n.tag == "img")]
     allowed = squash(" ".join(t for texts in TEXTS.values() for t in texts))
-    for phrase in FORBIDDEN_TEXTS + MENU_TEXTS:
+    for phrase in FORBIDDEN_TEXTS + MENU_TEXTS + RETIRED_TEXTS:
         pattern = words_re(phrase)
         if pattern.search(allowed):
             # Слова есть внутри текста ТЗ («Команда клиники…», «…или остались вопросы») — запрещены
@@ -474,7 +553,9 @@ def check_texts(root, body, raw):
             continue
         for where, text in spots:
             check(not pattern.search(text), f"[2] {where}: остался текст прежней редакции «{phrase}»")
-    check("видео" not in raw.lower(), "[2] в index.html осталось упоминание видео")
+    # «Видео» — только в подписи ролика для скринридера; кнопки «Смотреть видео» и прочих упоминаний нет.
+    check("видео" not in raw.replace(VIDEO_LABEL, "").lower(),
+          "[2] в index.html упоминание видео вне aria-label ролика в #planning")
     check("ЗАМЕНИТЬ" not in raw, "[2] в index.html остался блок «ЗАМЕНИТЬ» — заглушек в редакции 2 нет")
 
     # Подписи иллюстраций — у своих картинок, без номеров «01–04».
@@ -583,6 +664,13 @@ def check_images(body):
             check(img.attrs.get("loading") != "lazy", f"[3] {where}: в первом экране без loading=\"lazy\"")
         else:
             check(img.attrs.get("loading") == "lazy", f"[3] {where}: ниже первого экрана нужен loading=\"lazy\"")
+    # Кадры-заставки роликов грузятся сразу, как картинки, — входят в тот же бюджет.
+    for video in find_all(body, lambda n: n.tag == "video"):
+        poster = ROOT / (video.attrs.get("poster") or "").split("?")[0]
+        if poster.is_file():
+            total += poster.stat().st_size
+        else:
+            missing.append(basename(video.attrs.get("poster")))
     if not missing:
         check(total <= IMAGES_BUDGET,
               f"[3] картинки страницы весят {total / 1024:.0f} КБ — больше {IMAGES_BUDGET // 1024} КБ")
@@ -607,87 +695,308 @@ def check_preview(root):
     check((ROOT / "assets" / "img" / OG_IMAGE_NAME).is_file(), f"[G16] нет файла assets/img/{OG_IMAGE_NAME}")
 
 
-# ======================================================================== [G15] лёгкое фото для телефона
+# ======================================================================== [G22] #planning: ролик
 
-SIZES_PART = re.compile(r"\s*(?:\((min|max)-width:\s*(\d+(?:\.\d+)?)px\)\s+)?(\d+(?:\.\d+)?)(px|vw)\s*")
-
-
-def parse_sizes(sizes):
-    """sizes → [((мин., макс.) ширины окна или None, число, единица)]; None, если не разобрать.
-    Понимает «(max-width: Npx) L», «(min-width: Npx) L» и длины L вида «Npx», «Nvw»."""
-    out = []
-    for part in sizes.split(","):
-        m = SIZES_PART.fullmatch(part)
-        if not m:
-            return None
-        kind, bound, num, unit = m.groups()
-        cond = None
-        if kind:
-            cond = (float(bound), None) if kind == "min" else (None, float(bound))
-        out.append((cond, float(num), unit))
-    return out
-
-
-def slot_width(sizes, viewport):
-    """Ширина слота (px) при ширине окна viewport — по первому подходящему условию, как в браузере."""
-    for cond, num, unit in sizes:
-        if cond is not None:
-            lo, hi = cond
-            if (lo is not None and viewport < lo) or (hi is not None and viewport > hi):
-                continue
-        return num * viewport / 100 if unit == "vw" else num
-    return None
-
-
-def pick_candidate(candidates, need):
-    """Как браузер: самый маленький файл, у которого ширина ≥ нужной; нет такого — самый большой."""
-    for name, width in sorted(candidates.items(), key=lambda c: c[1]):
-        if width >= need:
-            return name
-    return max(candidates, key=candidates.get)
-
-
-def check_planning_srcset(body):
+def check_planning_video(body, raw):
+    """§11 (G22), таск F10: в #planning вместо картинки — ролик «КТ в работе». Один <video> на странице,
+    в карточке #planning (элемент с классом, без текста): muted, loop, playsinline, preload="none", poster;
+    без autoplay, controls и src — адрес ролика в data-src, его подставляет main.js, когда блок подходит
+    к экрану (rootMargin ≈ 300 px); при «уменьшить движение» и saveData ролик не грузится; без JS виден
+    poster. width/height — в пропорции файла (3:2), aria-label — подпись для скринридера. Карточка 3:2
+    со скруглением 16 px и тёмным фоном под цвет ролика, на телефоне — под текстом на всю ширину.
+    exam-ct.jpg остаётся только в шаге «Врач изучит данные»; фото рук xray-hands*.jpg нет."""
+    check(PLANNING_RETIRED not in raw, f"[G22] в index.html осталось фото рук {PLANNING_RETIRED}*.jpg")
+    exam = [i for i in find_all(body, lambda n: n.tag == "img") if basename(i.attrs.get("src")) == EXAM_CT]
+    after = by_id(body, "after")
+    check(len(exam) == 1 and after is not None and after in list(exam[0].ancestors()),
+          f"[G22] {EXAM_CT} на странице {len(exam)} раз(а) — нужен один, в шаге «Врач изучит данные» (#after)")
+    videos = find_all(body, lambda n: n.tag == "video")
     section = by_id(body, "planning")
-    imgs = find_all(section, lambda n: n.tag == "img") if section is not None else []
-    if not check(len(imgs) == 1, f"[G15] в #planning нужна одна картинка, найдено {len(imgs)}"):
+    if not check(len(videos) == 1 and section is not None and section in list(videos[0].ancestors()),
+                 f"[G22] на странице нужен один <video> — в #planning, найдено {len(videos)}"):
         return
-    img = imgs[0]
-    for attr in ("alt", "width", "height"):
-        check((img.attrs.get(attr) or "") == PLANNING_PHOTO[attr],
-              f"[G15] #planning: {attr}=\"{img.attrs.get(attr)}\", должно остаться \"{PLANNING_PHOTO[attr]}\"")
-    check(basename(img.attrs.get("src")) == "xray-hands.jpg", "[G15] #planning: src должен остаться xray-hands.jpg")
+    video = videos[0]
+    where = f"[G22] <video> (строка {video.line})"
+    for flag in VIDEO_FLAGS:
+        check(flag in video.attrs, f"{where}: нет атрибута {flag}")
+    for attr in VIDEO_BANNED:
+        check(attr not in video.attrs, f"{where}: атрибут {attr} — ролик не грузится на старте и без кнопок")
+    check(video.attrs.get("preload") == "none", f"{where}: preload=\"{video.attrs.get('preload')}\", нужно \"none\"")
+    inner = [n for n in video.iter() if n is not video]
+    check(not any("src" in n.attrs for n in inner),
+          f"{where}: внутри <source src> — ролик начнёт грузиться на старте; адрес — в data-src")
+    check(video.attrs.get("aria-label") == VIDEO_LABEL,
+          f"{where}: aria-label «{video.attrs.get('aria-label')}», нужно «{VIDEO_LABEL}»")
+    check(video.attrs.get("data-src") == VIDEO_SRC, f"{where}: data-src «{video.attrs.get('data-src')}», нужно {VIDEO_SRC}")
+    check(video.attrs.get("poster") == VIDEO_POSTER, f"{where}: poster «{video.attrs.get('poster')}», нужно {VIDEO_POSTER}")
+    check((ROOT / VIDEO_SRC).is_file(), f"{where}: нет файла {VIDEO_SRC}")
+    poster_size = image_size(ROOT / VIDEO_POSTER) if (ROOT / VIDEO_POSTER).is_file() else None
+    check(poster_size is not None, f"{where}: нет файла кадра-заставки {VIDEO_POSTER} (JPEG)")
+    dims = [video.attrs.get(d) or "" for d in ("width", "height")]
+    if check(all(d.isdigit() and int(d) > 0 for d in dims), f"{where}: нужны width и height — вёрстка не прыгает"):
+        w, h = map(int, dims)
+        check(abs((w / h) / 1.5 - 1) <= RATIO_TOLERANCE, f"{where}: width/height {w}×{h} — не 3:2")
+        if poster_size:
+            check(abs((w / h) / (poster_size[0] / poster_size[1]) - 1) <= RATIO_TOLERANCE,
+                  f"{where}: width/height {w}×{h} не в пропорции заставки {poster_size[0]}×{poster_size[1]}")
+    card = video.parent
+    if not check(card is not None and card is not section and card.classes and not squash(card.text()),
+                 "[G22] #planning: ролик должен лежать в своей карточке (элемент с классом, без текста)"):
+        return
 
-    candidates = {}
-    for part in filter(None, (p.strip() for p in (img.attrs.get("srcset") or "").split(","))):
-        m = re.fullmatch(r"(assets/img/[\w.-]+)\s+(\d+)w", part)
-        if m:
-            candidates[basename(m.group(1))] = int(m.group(2))
-        else:
-            fail(f"[G15] #planning: srcset «{part}» — нужен вид «assets/img/файл.jpg 1000w»")
-    if not check(candidates == PLANNING_PHOTO["srcset"],
-                 f"[G15] #planning: srcset {candidates or 'нет'}, нужно {PLANNING_PHOTO['srcset']}"):
+    if not check(STYLE.is_file(), "[G22] нет style.css"):
         return
-    for name, width in candidates.items():  # дескриптор — правда о файле
-        size = image_size(ROOT / "assets" / "img" / name)
-        check(size is not None and size[0] == width,
-              f"[G15] #planning: {name} объявлен как {width}w, а в файле {size[0] if size else 'нет файла'} px")
+    css = STYLE.read_text(encoding="utf-8")
+    rules = css_rules_media(css)
+    tokens = root_tokens(css)
+    desktop = ("",)
+    phone = ("", TABLET_MEDIA, PHONE_MEDIA)
+    radius = resolve(cascade(rules, card.classes, "border-radius", desktop), tokens)
+    background = resolve(cascade(rules, card.classes, "background", desktop)
+                         or cascade(rules, card.classes, "background-color", desktop), tokens)
+    ratio = cascade(rules, card.classes, "aspect-ratio", desktop)
+    check(radius == PLANNING_RADIUS, f"[G22] карточка #planning: border-radius {radius}, нужно {PLANNING_RADIUS}")
+    shade = luminance(background)
+    check(shade is not None and shade <= PLANNING_DARK_MAX,
+          f"[G22] карточка #planning: фон {background} — нужен тёмный под цвет ролика (яркость ≤ {PLANNING_DARK_MAX})")
+    check(ratio is not None and ratio.replace(" ", "") == PLANNING_RATIO.replace(" ", ""),
+          f"[G22] карточка #planning: aspect-ratio {ratio}, нужно {PLANNING_RATIO} (как у ролика 1200×800)")
+    for medias in (("", TABLET_MEDIA), phone):
+        check(cascade(rules, card.classes, "aspect-ratio", medias) == ratio,
+              "[G22] карточка #planning: на узких экранах пропорции не те же, что на десктопе")
+    width = cascade(rules, card.classes, "max-width", phone)
+    check(width in (None, "none", "100%"),
+          f"[G22] карточка #planning на телефоне: max-width {width} — нужна вся ширина под текстом")
+    check(cascade(rules, card.classes, "width", phone) in (None, "100%", "auto"),
+          "[G22] карточка #planning на телефоне: ширина не на всю колонку")
+    template = cascade(rules, ["planning"], "grid-template-columns", phone) or ""
+    try:
+        cols = len(grid_columns(template, 360, 0)) if template else 0
+    except ValueError:
+        cols = 0
+    check(cols == 1, f"[G22] .planning на телефоне: «{template}» — ролик должен стоять под текстом (одна колонка)")
+    for prop, want in (("width", "100%"), ("height", "100%"), ("object-fit", "cover")):
+        got = cascade(rules, video.classes, prop, desktop)
+        check(got == want, f"[G22] ролик ({' '.join(video.classes) or 'без класса'}): {prop} {got}, нужно {want}")
 
-    sizes = parse_sizes(img.attrs.get("sizes") or "")
-    if not check(sizes is not None, f"[G15] #planning: sizes «{img.attrs.get('sizes') or 'нет'}» — нет или не разобрать"):
+    # main.js: адрес подставляется при подходе блока, пауза вне экрана, бережно к трафику и движению.
+    if not check(SCRIPT.is_file(), "[G22] нет main.js"):
         return
-    light, full = "xray-hands-1000.jpg", "xray-hands.jpg"
-    for width in PHONE_WIDTHS:
-        slot = slot_width(sizes, width)
-        for dpr in SRCSET_DPRS:
-            got = pick_candidate(candidates, slot * dpr) if slot else None
-            check(got == light, f"[G15] #planning: при ширине {width} px и плотности {dpr}× браузер возьмёт {got}, "
-                                f"а телефону нужен {light}")
-    for width in DESKTOP_WIDTHS:  # на экране десктопа с 2× фото не должно мылиться
-        slot = slot_width(sizes, width)
-        got = pick_candidate(candidates, slot * 2) if slot else None
-        check(got == full, f"[G15] #planning: при ширине {width} px и плотности 2× браузер возьмёт {got}, "
-                           f"а десктопу нужен {full}")
+    js = re.sub(r"/\*.*?\*/|(?<![:\w])//[^\n]*", "", SCRIPT.read_text(encoding="utf-8"), flags=re.S)
+    check("data-src" in js or "dataset.src" in js, "[G22] main.js не читает data-src ролика — он не загрузится")
+    check("saveData" in js, "[G22] main.js: нет проверки navigator.connection.saveData — ролик грузится в режиме экономии")
+    check("prefers-reduced-motion" in js, "[G22] main.js: «уменьшить движение» не учитывается")
+    check(".play(" in js and ".pause(" in js,
+          "[G22] main.js: ролик должен запускаться в зоне видимости и вставать на паузу вне её")
+    pixel = [m for m in (margin_bottom(v) for v in root_margins(js)) if m and m[1] == "px"]
+    low, high = VIDEO_MARGIN_PX
+    check(any(low <= value <= high for value, _ in pixel),
+          f"[G22] main.js: нет rootMargin загрузки ролика ≈ 300 px (снизу {low}–{high} px), найдено {pixel}")
+
+
+def root_margins(js):
+    """Значения rootMargin у IntersectionObserver в main.js (строковые литералы)."""
+    return re.findall(r"rootMargin\s*:\s*['\"]([^'\"]+)['\"]", js)
+
+
+def margin_bottom(value):
+    """Нижнее поле rootMargin «top right bottom left» (1–4 значения) → (число, «px» или «%»); иначе None."""
+    values = value.split()
+    bottom = {1: 0, 2: 0, 3: 2, 4: 2}.get(len(values))
+    m = re.fullmatch(r"(\d+(?:\.\d+)?)(px|%)", values[bottom]) if bottom is not None else None
+    return (float(m.group(1)), m.group(2)) if m else None
+
+
+def luminance(color):
+    """Относительная яркость (WCAG) цвета #rgb / #rrggbb; иначе None."""
+    m = re.fullmatch(r"#([0-9a-f]{3}|[0-9a-f]{6})", (color or "").strip().lower())
+    if not m:
+        return None
+    digits = m.group(1)
+    if len(digits) == 3:
+        digits = "".join(c * 2 for c in digits)
+    channels = [int(digits[i:i + 2], 16) / 255 for i in (0, 2, 4)]
+    lin = [c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4 for c in channels]
+    return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2]
+
+
+def contrast(fg, bg):
+    """Контраст WCAG двух цветов; None, если цвет не разобрать."""
+    a, b = luminance(fg), luminance(bg)
+    if a is None or b is None:
+        return None
+    return (max(a, b) + 0.05) / (min(a, b) + 0.05)
+
+
+# ======================================================================== [G19] карточки дозы
+
+def check_dose_cards(body):
+    """§11 (G19): в #safety две карточки-сравнения: картинка, в углу число и «мкЗв», под ней подпись;
+    бейдж — поверх картинки (position: absolute, top и right); примечание 14/18 цветом --muted."""
+    safety = by_id(body, "safety")
+    if safety is None:
+        return
+    lists = by_class(safety, "dose")
+    if not check(len(lists) == 1, f"[G19] в #safety нужен один ряд карточек .dose, найдено {len(lists)}"):
+        return
+    got = []
+    for item in [c for c in lists[0].children if isinstance(c, Node)]:
+        imgs = find_all(item, lambda n: n.tag == "img")
+        nums = by_class(item, "dose__num")
+        units = by_class(item, "dose__unit")
+        caps = by_class(item, "dose__caption")
+        badge = by_class(item, "dose__badge")
+        media = imgs[0].parent if imgs else None
+        check(bool(badge) and media is not None and badge[0].parent is media,
+              f"[G19] строка {item.line}: бейдж с числом должен лежать вместе с картинкой (в её блоке)")
+        got.append((basename(imgs[0].attrs.get("src")) if imgs else None,
+                    squash(nums[0].text()) if nums else None,
+                    squash(units[0].text()) if units else None,
+                    squash(caps[0].text()) if caps else None))
+    check(got == DOSE_CARDS, f"[G19] карточки дозы (картинка, число, единица, подпись) {got}, ожидалось {DOSE_CARDS}")
+    if not STYLE.is_file():
+        return
+    css = STYLE.read_text(encoding="utf-8")
+    rules = css_rules_media(css)
+    every = ("", TABLET_MEDIA, PHONE_MEDIA)
+    check(cascade(rules, ["dose__badge"], "position", every) == "absolute",
+          "[G19] .dose__badge: нужно position: absolute — число в углу картинки")
+    for prop in ("top", "right"):
+        check(cascade(rules, ["dose__badge"], prop, every) is not None, f"[G19] .dose__badge: не задан {prop}")
+    check(cascade(rules, ["dose__media"], "position", every) == "relative",
+          "[G19] .dose__media: нужно position: relative — бейдж держится за картинку")
+    notes = [n for n in safety.iter() if n.tag == "p" and squash(n.text()) == SAFETY_NOTE]
+    tokens = root_tokens(css)
+    if check(len(notes) == 1, "[G19] нет примечания к дозам отдельным абзацем"):
+        note = notes[0]
+        name = " ".join(note.classes) or "без класса"
+        for medias in (("",), ("", TABLET_MEDIA), every):
+            for prop, want in NOTE_STYLE.items():
+                got_value = cascade(rules, note.classes, prop, medias)
+                check(got_value == want, f"[G19] примечание ({name}) {medias[-1] or 'десктоп'}: {prop} {got_value}, "
+                                         f"нужно {want}")
+            # F10: мелкий текст читается — контраст к фону секции ≥ 4,5:1 (у --muted на --bg-gray ≈ 3,2:1).
+            color = resolve(cascade(rules, note.classes, "color", medias), tokens)
+            back = resolve(cascade(rules, safety.classes, "background", medias)
+                           or cascade(rules, safety.classes, "background-color", medias), tokens)
+            ratio = contrast(color, back)
+            check(ratio is not None and ratio >= NOTE_MIN_CONTRAST,
+                  f"[G19] примечание ({name}) {medias[-1] or 'десктоп'}: цвет {color} на фоне {back} — контраст "
+                  f"{ratio and round(ratio, 2)}, нужно ≥ {NOTE_MIN_CONTRAST}:1")
+    check(tokens.get("--muted") == MUTED, f"[G19] в :root нет --muted: {MUTED}")
+
+
+# ======================================================================== [G20] логотип
+
+class _Source(HTMLParser):
+    """Пути (атрибут d) трёх SVG логотипа в logo-intro.html — по viewBox."""
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.parts, self.current = {}, None
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        if tag == "svg" and attrs.get("viewbox") in LOGO_PARTS:
+            self.current = attrs["viewbox"]
+            self.parts[self.current] = []
+        elif tag == "path" and self.current and attrs.get("d"):
+            self.parts[self.current].append(" ".join(attrs["d"].split()))
+
+    handle_startendtag = handle_starttag
+
+    def handle_endtag(self, tag):
+        if tag == "svg":
+            self.current = None
+
+
+def check_logo(root, body, raw):
+    """§11 (G20): логотип первого экрана — три SVG из logo-intro.html (знак, надпись, подпись) в одном блоке
+    с доступным именем; PNG-логотипа нет; демо-элементов, шрифтов Golos Text / IBM Plex Mono и перехвата
+    клавиш нет; ширина ≈ 230 px на десктопе и ≈ 120 px ниже 1200, подпись не мельче 10 px (ниже 1200 —
+    скрыта, D05); скрытое до прорисовки — только под html.has-logo-intro (ставит main.js; без JS и при
+    «уменьшить движение» его нет)."""
+    check("logo-white" not in raw, "[G20] index.html ссылается на PNG-логотип logo-white — нужен SVG из logo-intro.html")
+    top = by_id(body, "top")
+    if top is None:
+        return
+    logos = by_class(top, "logo")
+    if not check(len(logos) == 1, f"[G20] в первом экране нужен один блок .logo, найдено {len(logos)}"):
+        return
+    logo = logos[0]
+    label = logo.attrs.get("aria-label") or ""
+    check(logo.attrs.get("role") == "img" and norm(LOGO_LABEL) in norm(label),
+          f"[G20] у .logo нужно role=\"img\" и aria-label с «{LOGO_LABEL}» (сейчас role={logo.attrs.get('role')}, "
+          f"aria-label=«{label}»)")
+    svgs = [n for n in logo.iter() if n.tag == "svg"]
+    boxes = [" ".join((n.attrs.get("viewbox") or "").split()) for n in svgs]
+    check(boxes == list(LOGO_PARTS), f"[G20] SVG логотипа (viewBox) {boxes}, нужны {list(LOGO_PARTS)} — "
+                                     "знак, надпись и подпись из logo-intro.html")
+    for svg in svgs:
+        check(svg.attrs.get("aria-hidden") == "true",
+              f"[G20] строка {svg.line}: SVG внутри .logo — aria-hidden=\"true\" (имя у блока .logo)")
+    mine = {" ".join((n.attrs.get("viewbox") or "").split()):
+            [" ".join(p.attrs["d"].split()) for p in n.iter() if p.tag == "path" and p.attrs.get("d")]
+            for n in svgs}
+    for box, (part, count) in LOGO_PARTS.items():
+        check(len(mine.get(box, [])) == count, f"[G20] {part}: путей {len(mine.get(box, []))}, нужно {count}")
+    source = ROOT / LOGO_SOURCE
+    if source.is_file():
+        parser = _Source()
+        parser.feed(source.read_text(encoding="utf-8"))
+        for box, (part, _) in LOGO_PARTS.items():
+            want = parser.parts.get(box)
+            if check(want is not None, f"[G20] в {LOGO_SOURCE} не найден SVG {part} (viewBox {box})"):
+                check(sorted(mine.get(box, [])) == sorted(want),
+                      f"[G20] {part}: геометрия путей не совпадает с {LOGO_SOURCE}")
+    for n in body.iter():
+        check(not (set(n.classes) & LOGO_DEMO_CLASSES) and n.attrs.get("id") not in LOGO_DEMO_IDS,
+              f"[G20] строка {n.line}: демо-элемент заставки ({' '.join(n.classes) or n.attrs.get('id')}) — не переносится")
+    texts = [raw] + [path.read_text(encoding="utf-8") for path in (STYLE, SCRIPT) if path.is_file()]
+    for font in LOGO_DEMO_FONTS:
+        check(not any(font in t for t in texts), f"[G20] шрифт заставки «{font}» — на странице только Inter")
+    if not STYLE.is_file():
+        return
+    css = STYLE.read_text(encoding="utf-8")
+    rules = css_rules_media(css)
+    for label_, medias in (("десктоп", ("",)), ("телефон", ("", TABLET_MEDIA, PHONE_MEDIA))):
+        width = px(cascade(rules, ["logo"], "width", medias))
+        want = LOGO_WIDTH[label_]
+        check(width is not None and abs(width - want) <= LOGO_TOL,
+              f"[G20] .logo {label_}: width {width}, нужно ≈ {want}px (±{LOGO_TOL})")
+    # D05: подпись «центр восстановления улыбок» не мельче 10 px. Высота её SVG = ширина × 105 / 1725,9
+    # (viewBox); ширина — доля ширины блока .logo. Ниже 1200 логотип 120 px — подпись скрыта.
+    mottos = by_class(logo, "logo__motto")
+    if check(len(mottos) == 1, "[G20] в логотипе нет подписи .logo__motto"):
+        motto = mottos[0]
+        box = [float(v) for v in LOGO_MOTTO_BOX.split()]
+        check(" ".join((motto.attrs.get("viewbox") or "").split()) == LOGO_MOTTO_BOX,
+              f"[G20] .logo__motto: viewBox не {LOGO_MOTTO_BOX}")
+        check(cascade(rules, motto.classes, "display", ("",)) != "none", "[G20] на десктопе подпись логотипа скрыта")
+        logo_w = px(cascade(rules, ["logo"], "width", ("",)))
+        share = cascade(rules, motto.classes, "width", ("",)) or ""
+        m = re.fullmatch(r"(\d+(?:\.\d+)?)%", share)
+        motto_w = (float(m.group(1)) / 100 * logo_w) if (m and logo_w) else px(share)
+        height = motto_w * box[3] / box[2] if motto_w else None
+        check(height is not None and height >= LOGO_MOTTO_MIN_PX - 1e-6,
+              f"[G20] подпись логотипа на десктопе {height and round(height, 1)} px в высоту — нужно ≥ {LOGO_MOTTO_MIN_PX} px")
+        for media in (TABLET_MEDIA, PHONE_MEDIA):
+            medias = ("", TABLET_MEDIA) + ((PHONE_MEDIA,) if media == PHONE_MEDIA else ())
+            check(cascade(rules, motto.classes, "display", medias) == "none",
+                  f"[G20] {media}: подпись логотипа при ширине 120 px мельче {LOGO_MOTTO_MIN_PX} px — нужно display: none")
+    for media, sel, decls in rules:
+        if REDUCED_MOTION in media or media.startswith("@keyframes"):
+            continue
+        if any(prop in decls for prop in STROKE_HIDING):
+            check(all(f".{LOGO_GATE}" in part for part in sel.split(",")),
+                  f"[G20] «{sel}» прячет линии знака без класса .{LOGO_GATE} — без JS логотип не будет виден")
+    gated = [sel for _, sel, _ in rules if f".{LOGO_GATE}" in sel]
+    if gated and check(SCRIPT.is_file(), "[G20] нет main.js"):
+        js = SCRIPT.read_text(encoding="utf-8")
+        check(LOGO_GATE in js and "prefers-reduced-motion" in js,
+              f"[G20] main.js не ставит {LOGO_GATE} с учётом «уменьшить движение» — логотип останется скрытым")
+        reduced = [(sel, d) for media, sel, d in rules if REDUCED_MOTION in media]
+        check(any(f".{LOGO_GATE}" in sel and d.get("opacity") == "1" for sel, d in reduced),
+              f"[G20] @media ({REDUCED_MOTION}) не показывает логотип целиком (.{LOGO_GATE} … opacity: 1)")
 
 
 # ======================================================================== [4] ни кнопок, ни ссылок
@@ -814,6 +1123,21 @@ def css_value(rules, selector, prop, medias):
         if media in medias and prop in decls and selector in [s.strip() for s in sel.split(",")]:
             value = decls[prop]
     return value
+
+
+def root_tokens(css):
+    """{--токен: значение} из :root style.css (нижний регистр)."""
+    tokens = {}
+    for sel, decls in css_rules(css):
+        if sel == ":root":
+            tokens.update({k: v for k, v in decls.items() if k.startswith("--")})
+    return tokens
+
+
+def resolve(value, tokens):
+    """«var(--x)» → значение токена; иначе как есть."""
+    m = re.fullmatch(r"var\((--[\w-]+)\)", (value or "").strip())
+    return tokens.get(m.group(1)) if m else value
 
 
 def px(value):
@@ -1066,8 +1390,8 @@ def check_motion():
         if REDUCED_MOTION in media or media == "@media print":
             continue
         if (d.get("opacity") == "0" or d.get("visibility") == "hidden") and "::" not in sel:
-            check(all(f".{REVEAL_GATE}" in part for part in sel.split(",")),
-                  f"[G06] «{sel}» прячет контент без класса .{REVEAL_GATE} — без JS он не появится")
+            check(all(f".{REVEAL_GATE}" in part or f".{LOGO_GATE}" in part for part in sel.split(",")),
+                  f"[G06] «{sel}» прячет контент без класса .{REVEAL_GATE} / .{LOGO_GATE} — без JS он не появится")
         for prop in ("transition", "transition-property"):
             for name in transition_names(d.get(prop) or "", prop):
                 check(not LAYOUT_PROPS.match(name), f"[G06] «{sel}» {prop}: {name} — переход сдвигает вёрстку")
@@ -1075,6 +1399,98 @@ def check_motion():
         js = SCRIPT.read_text(encoding="utf-8")
         for needle in ("IntersectionObserver", REVEAL_GATE, "prefers-reduced-motion"):
             check(needle in js, f"[G06] main.js: нет «{needle}» — появление при прокрутке не бережное")
+
+
+# ======================================================================== [G21] размер H1
+
+def check_hero_title():
+    """§11 (G21): H1 — посередине между прежним H1 и H2 на каждой ширине (округлено до целого),
+    интерлиньяж — пропорционально прежнему: десктоп 50/55, планшет и телефон 28/35."""
+    if not STYLE.is_file():
+        return
+    rules = css_rules_media(STYLE.read_text(encoding="utf-8"))
+    for media, (size, lead) in H1_PREV.items():
+        h2_size = H2_SPEC[media][0]
+        want_size = round((size + h2_size) / 2)
+        want_lead = round(lead * want_size / size)
+        medias = ("", media) if media else ("",)
+        for prop, want in (("font-size", want_size), ("line-height", want_lead)):
+            got = px(css_value(rules, ".hero__title", prop, medias))
+            check(got == want, f"[G21] .hero__title {media or 'десктоп'}: {prop} {got}, нужно {want}px")
+        if media:  # телефон не перебивает планшет
+            phone = px(css_value(rules, ".hero__title", "font-size", ("", media, PHONE_MEDIA)))
+            check(phone == want_size, f"[G21] .hero__title на телефоне: font-size {phone}, нужно {want_size}px")
+
+
+# ======================================================================== [G23] текст без появления
+
+def time_s(token):
+    """«0.25s» / «250ms» → секунды; иначе None."""
+    m = re.fullmatch(r"(-?\d*\.?\d+)(m?s)", token.strip())
+    if not m:
+        return None
+    return float(m.group(1)) / (1000 if m.group(2) == "ms" else 1)
+
+
+def subject_classes(selector_part):
+    """Классы последнего составного селектора: «.has-reveal .reveal.is-in» → {'reveal', 'is-in'}."""
+    last = selector_part.strip().split()[-1] if selector_part.strip() else ""
+    return set(re.findall(r"\.([\w-]+)", re.sub(r"::?[\w-]+(\([^)]*\))?", "", last)))
+
+
+def check_text_motion(body):
+    """§11 (G23): у текста анимации появления нет совсем. CSS-анимации (animation) и появление из main.js
+    касаются только элементов без текста (картинки, карточки, логотип); появление ≤ 0,35 с и сдвиг ≤ 12 px,
+    срабатывает заранее — rootMargin снизу ≥ 15 %; въезд первого экрана ≤ 0,6 с."""
+    if not STYLE.is_file():
+        return
+
+    def with_text(classes):
+        return [n for n in body.iter() if classes and classes <= set(n.classes) and squash(n.text())]
+
+    rules = css_rules_media(STYLE.read_text(encoding="utf-8"))
+    for media, sel, d in rules:
+        if REDUCED_MOTION in media or media == "@media print" or media.startswith("@keyframes"):
+            continue
+        anim = d.get("animation") or d.get("animation-name")
+        if anim and anim != "none":
+            for part in sel.split(","):
+                hits = with_text(subject_classes(part))
+                check(not hits, f"[G23] «{part.strip()}» animation: {anim} — у текста анимации появления нет "
+                                f"({', '.join(sorted({' '.join(n.classes) for n in hits}))})")
+                if ".hero" in part:
+                    times = [t for t in (time_s(tok) for tok in split_top(anim, " ")) if t is not None]
+                    check(sum(times[:2]) <= HERO_ENTRANCE_MAX_S + 1e-9,
+                          f"[G23] «{part.strip()}»: въезд первого экрана {sum(times[:2]):.2f} с, нужно ≤ {HERO_ENTRANCE_MAX_S} с")
+        if f".{REVEAL_GATE}" in sel:
+            shift = re.search(r"translatey\((-?\d+(?:\.\d+)?)px\)", d.get("transform") or "")
+            if shift:
+                check(abs(float(shift.group(1))) <= REVEAL_MAX_SHIFT,
+                      f"[G23] «{sel}»: сдвиг при появлении {shift.group(1)}px, нужно ≤ {REVEAL_MAX_SHIFT}px")
+            check("translatex" not in (d.get("transform") or "") and "scale" not in (d.get("transform") or ""),
+                  f"[G23] «{sel}»: при появлении только короткий сдвиг по вертикали")
+            for part in split_top(d.get("transition") or "", ","):
+                times = [t for t in (time_s(tok) for tok in split_top(part, " ")) if t is not None]
+                if times:
+                    check(times[0] <= REVEAL_MAX_S, f"[G23] «{sel}»: появление {times[0]} с, нужно ≤ {REVEAL_MAX_S} с")
+    if not check(SCRIPT.is_file(), "[G23] нет main.js"):
+        return
+    js = re.sub(r"/\*.*?\*/|(?<![:\w])//[^\n]*", "", SCRIPT.read_text(encoding="utf-8"), flags=re.S)
+    touched = set()
+    for literal in re.findall(r"'([^'\n]*)'|\"([^\"\n]*)\"", js):
+        text = literal[0] or literal[1]
+        touched |= set(re.findall(r"(?<![\w.])\.([a-z][\w-]*)", text))
+    for cls in sorted(touched):
+        hits = with_text({cls})
+        check(not hits, f"[G23] main.js работает с .{cls}, а в нём текст (строка {hits[0].line if hits else ''}) — "
+                        "появление при прокрутке только у картинок и карточек")
+    # Появление — rootMargin в долях экрана; поле загрузки ролика в px (F10) проверяет check_planning_video.
+    margins = root_margins(js)
+    reveal = [(v, margin_bottom(v)) for v in margins if (margin_bottom(v) or (0, ""))[1] != "px"]
+    if check(len(reveal) == 1, f"[G23] main.js: нужен один rootMargin появления (в %), найдено {[v for v, _ in reveal]}"):
+        value, bottom = reveal[0]
+        check(bool(bottom) and bottom[0] >= REVEAL_MIN_MARGIN,
+              f"[G23] main.js: rootMargin «{value}» — снизу нужно ≥ {REVEAL_MIN_MARGIN}% (срабатывать заранее)")
 
 
 # ======================================================================== README
@@ -1086,7 +1502,7 @@ def check_readme():
     check("Что заменить" not in text, "[README] осталась таблица «Что заменить» — заглушек в редакции 2 нет")
     for anchor in ("#telegram", "#whatsapp", "#max", "#vopros", "#video", "#uslugi"):
         check(anchor not in text, f"[README] осталась заглушка {anchor}")
-    for needle in ("tools/check_site.py", FONT_NAME, "Пикассо"):
+    for needle in ("tools/check_site.py", FONT_NAME, "Пикассо", "assets/video/"):  # F10: README — о ролике тоже
         check(needle in text, f"[README] нет «{needle}»")
 
 
