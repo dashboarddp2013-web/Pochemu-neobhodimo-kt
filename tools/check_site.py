@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Проверка страницы сайта «Денталь профи» без браузера — редакция 3 («Почему необходимо КТ»).
+"""Проверка страницы сайта «Денталь профи» без браузера — редакция 4 («Почему необходимо КТ»).
 
 Запуск из корня сайта:
     PYTHONIOENCODING=utf-8 python tools/check_site.py
 
 Код возврата 0 — всё в порядке; иначе печатает строки «ПРОБЛЕМА: …» и возвращает 1.
 Только стандартная библиотека Python 3. Эталон текстов — в самом скрипте (TEXTS ниже), это ТЗ
-коммерческого директора с правками редакции 3 (§11 спеки) слово в слово; служебная папка .autopilot
-для проверки не нужна.
+коммерческого директора с правками редакций 3 и 4 (§11, §12 спеки) слово в слово; служебная папка
+.autopilot для проверки не нужна.
 
 Что проверяется:
   [1]  index.html разбирается html.parser без незакрытых и лишних тегов; lang="ru";
@@ -30,9 +30,15 @@
   [G03] в первом экране нет вертикальных линий;
   [G16] превью ссылки в мессенджере: og:image (абсолютный адрес, 1200×630), og:url, og:type, og:locale,
         twitter:card, прежние og:title и og:description; файл картинки на месте;
-  [G17–G19, G24, G25] тексты редакции 3 — в TEXTS; убранные формулировки (RETIRED_TEXTS) нигде не
-        встречаются; в #safety две карточки-сравнения: картинка, число и «мкЗв» в углу, подпись
-        (КТ — «20–200», D05); примечание 14/18, контраст цвета к фону секции ≥ 4,5:1;
+  [G17, G24–G26, G32, G33] тексты редакций 3 и 4 — в TEXTS; убранные формулировки
+        (RETIRED_TEXTS) нигде не встречаются — ни в тексте, ни в title, meta, alt; «мкЗв» нет и в index.html;
+        абзацы #safety — оба прежних (уточнение заказчика: текст блока не сокращать, G28 не вводится);
+  [G29–G31] #safety: слева H2 и абзацы, справа две карточки без чисел (картинка + подпись); на десктопе
+        колонка текста ≈ 40 %, ряд карточек до правого края контента, карточка ≤ 480 px; на планшете —
+        текст сверху, карточки 2 в ряд; на телефоне — столбиком, с ≈ 600 px — 2 в ряд;
+        на картинке с самолётом — пунктирный маршрут (inline SVG, aria-hidden) с точками и живыми
+        подписями «Москва» (слева) и «Нью-Йорк» (справа) в верхней части картинки, подпись ≥ 12 px;
+        маршрут прокладывается ≈ 1 с при появлении карточки, скрытое — только под html.has-reveal;
   [G20] логотип первого экрана — SVG из logo-intro.html (знак, «Денталь Профи», подпись; геометрия
         путей совпадает с файлом-источником, если он лежит в корне), без PNG, демо-элементов, шрифтов
         Golos Text / IBM Plex Mono и перехвата клавиш; ширина ≈ 230 px на десктопе и ≈ 120 px ниже 1200;
@@ -45,10 +51,13 @@
         файлы ролика и заставки на месте; карточка 3:2 со скруглением 16 px и тёмным фоном, на телефоне —
         на всю ширину под текстом; exam-ct.jpg — только в шаге «Врач изучит данные»; фото рук нет;
   [G23] у текста нет анимации появления: ни CSS-анимации, ни появления из main.js не касаются
-        элементов с текстом; появление картинок ≤ 0,35 с и сдвиг ≤ 12 px, срабатывает заранее
-        (rootMargin снизу ≥ 15 %); въезд первого экрана ≤ 0,6 с;
-  README: без таблицы «Что заменить», со ссылкой на tools/check_site.py, словами «Inter» и «Пикассо»,
-       с папкой ролика assets/video/.
+        элементов с текстом (подписи маршрута — часть картинки); въезд первого экрана ≤ 0,6 с;
+  [G27] картинки и карточки (#clarify, #safety, карточка #planning, #after) заметно всплывают:
+        translateY ≈ 28 px → 0 и opacity, ≈ 0,7 с, в ряду по очереди (шаг ≈ 90 мс); срабатывает в зоне
+        видимости — rootMargin снизу от −15 % до 0 (не заранее, за краем экрана), порог ≤ 0,5;
+        при наведении мышью — подъём 4–6 px;
+  README: без таблицы «Что заменить» и цифр дозы, со ссылкой на tools/check_site.py, словами «Inter»
+       и «Пикассо», с папкой ролика assets/video/.
 """
 import re
 import struct
@@ -86,23 +95,34 @@ HOWTO_ITEMS = [
     ("Где пройти КТ",
      "В диагностическом центре «Пикассо» по направлению, которое вы получили на консультации."),
     ("Сколько времени заложить",
-     "Ориентируйтесь примерно на 30 минут на посещение. Точное время уточните при записи."),
+     "Ориентируйтесь примерно на 30 минут на посещение. Согласуйте точное время при записи."),
     ("Нужна ли подготовка",
-     "Как правило, специальная подготовка не требуется. При записи уточните рекомендации "
-     "для назначенного исследования."),
+     "Как правило, специальная подготовка не требуется. При записи уточните, что необходимо иметь "
+     "с собой."),
     ("Как результаты попадут врачу",
      "«Пикассо» отправляет результаты напрямую в нашу клинику по электронной почте. При посещении "
-     "уточните, что исследование выполняется по направлению «Денталь Профи»."),
-]  # G17: пункта «Если КТ уже есть» нет
-# G19: карточки-сравнения дозы в #safety — (картинка, число, единица, подпись).
-# D05: 20–100 мкЗв верно только для малого поля, снимок обеих челюстей в среднем ≈ 200 мкЗв.
-DOSE_CARDS = [
-    ("safety-ct.jpg", "20–200", "мкЗв", "КТ зубов — доза зависит от размера зоны"),
-    ("safety-plane.jpg", "50–80", "мкЗв", "Перелёт Москва — Нью-Йорк"),
+     "скажите, что исследование выполняется по направлению «Денталь Профи»."),
+]  # G17: пункта «Если КТ уже есть» нет; G32: три правки редакции 4
+# G26: в первом экране — одно предложение.
+HERO_TEXT = ("На консультации врач рекомендовал вам компьютерную томографию, чтобы уточнить важные детали "
+             "перед планированием лечения.")
+# Абзацы #safety — оба прежних без изменений (уточнение заказчика к редакции 4: текст блока не сокращать,
+# фраза G28 «…но у современных томографов она небольшая» не вводится); всё ниже них — по §12.
+SAFETY_LEADS = [
+    "КТ связано с лучевой нагрузкой, поэтому врач назначает исследование для решения конкретной "
+    "диагностической задачи. Доза зависит от области исследования, оборудования и выбранного протокола.",
+    "У современных томографов для зубов доза небольшая — она сопоставима с дозой, которую человек "
+    "получает в дальнем перелёте на самолёте.",
 ]
-SAFETY_FACT = "Для сравнения: естественный радиационный фон — около 8 мкЗв в сутки."
-SAFETY_NOTE = ("Типичные значения по данным научных исследований. "
-               "Точную дозу вашего исследования подскажет врач.")
+SAFETY_SHORT_LEAD = "но у современных томографов она небольшая"  # фраза G28 — на странице её нет
+# G29: две карточки #safety без чисел — (картинка, подпись).
+SAFETY_CARDS = [
+    ("safety-ct.jpg", "Компьютерный томограф"),
+    ("safety-plane.jpg", "Перелёт Москва — Нью-Йорк"),
+]
+# G30: маршрут на картинке с самолётом — подписи точек слева направо.
+ROUTE_IMAGE = "safety-plane.jpg"
+ROUTE_POINTS = ("Москва", "Нью-Йорк")
 STEPS = [
     ("step-1.jpg", "1. Получим исследование", "«Пикассо» направит результаты в клинику."),
     ("exam-ct.jpg", "2. Врач изучит данные",
@@ -112,12 +132,7 @@ STEPS = [
 ]
 # Весь видимый текст страницы по порядку: секция → строки.
 TEXTS = {
-    "top": [
-        H1,
-        "На консультации врач рекомендовал вам компьютерную томографию, чтобы уточнить важные детали "
-        "перед планированием лечения. Исследование поможет оценить то, что невозможно увидеть только "
-        "при осмотре, и выбрать дальнейшую тактику с учётом вашей ситуации.",
-    ],
+    "top": [H1, HERO_TEXT],
     "clarify": [
         HEADINGS["clarify"],
         "В зависимости от задачи лечения врач оценивает состояние костной ткани, корней зубов "
@@ -133,13 +148,10 @@ TEXTS = {
     ],
     "safety": [
         HEADINGS["safety"],
-        "КТ связано с лучевой нагрузкой, поэтому врач назначает исследование для решения конкретной "
-        "диагностической задачи. Доза зависит от области исследования, оборудования и выбранного протокола.",
-        "У современных томографов для зубов доза небольшая — она сопоставима с дозой, которую человек "
-        "получает в дальнем перелёте на самолёте.",
-        *[line for _, num, unit, caption in DOSE_CARDS for line in (num, unit, caption)],
-        SAFETY_FACT,
-        SAFETY_NOTE,
+        *SAFETY_LEADS,
+        # подписи маршрута — на картинке с самолётом, перед подписью её карточки
+        *[line for name, caption in SAFETY_CARDS
+          for line in ((*ROUTE_POINTS, caption) if name == ROUTE_IMAGE else (caption,))],
     ],
     "howto": [HEADINGS["howto"], *[line for item in HOWTO_ITEMS for line in item]],
     "after": [HEADINGS["after"], *[line for _, title, text in STEPS for line in (title, text)]],
@@ -147,9 +159,8 @@ TEXTS = {
         HEADINGS["next"],
         "Пройдите КТ по выданному направлению. После получения результатов врач сможет уточнить план "
         "лечения, а мы свяжемся с вами, чтобы согласовать дальнейшие действия.",
-        "Если что-то мешает пройти исследование или остались вопросы, ответьте координатору в переписке, "
-        "из которой вы открыли эту страницу. Мы поможем разобраться.",
-    ],
+        "Если у вас возникли какие-то вопросы, ответьте координатору в переписке. Мы поможем разобраться.",
+    ],  # G33
 }
 
 # Тексты прежних редакций, которые ТЗ убирает (видимый текст, title, meta, alt). «мкЗв» и перелёт
@@ -163,7 +174,14 @@ RETIRED_TEXTS = ["Если КТ уже есть", "Передайте имеющ
                  "Пройдите исследование по выданному направлению", "подходит ли оно для текущего планирования",
                  "анатомических образований", "Анатомические образования", "обосновать дальнейшие решения",
                  "важные ограничения", "мы сможем перейти к следующему этапу",
-                 "20–100", "КТ зубов на современном аппарате"]  # D05: прежние число и подпись КТ
+                 "20–100", "КТ зубов на современном аппарате",  # D05: прежние число и подпись КТ
+                 # редакция 4 (§12: G26, G29, G32, G33) — цифр дозы и пояснений к ним больше нет;
+                 # абзацы #safety «…Доза зависит от области…» и «…сопоставима с дозой…» остаются (уточнение)
+                 "Исследование поможет оценить", SAFETY_SHORT_LEAD,
+                 "Для сравнения", "Типичные значения", "мкЗв", "20–200", "50–80", "КТ зубов — доза зависит",
+                 "Точное время уточните", "рекомендации для назначенного исследования",
+                 "уточните, что исследование выполняется", "Если что-то мешает пройти исследование"]
+DOSE_UNIT = "мкЗв"  # G29: единицы дозы нет нигде в index.html — ни в тексте, ни в комментариях
 MENU_TEXTS = ["Услуги", "Цены", "Команда", "Акции", "Отзывы", "Пациентам", "Контакты"]
 
 # ---------------------------------------------------------------- Картинки (§10, таск F7 — JPEG)
@@ -171,7 +189,7 @@ IMAGES = {
     "top": ["step-2.jpg"],  # G20: логотип — SVG в разметке, не картинка
     "clarify": [name for name, _ in CLARIFY_FIGURES],
     "planning": [],  # G22: вместо картинки — ролик (<video>, VIDEO_* ниже)
-    "safety": [name for name, _, _, _ in DOSE_CARDS],
+    "safety": [name for name, _ in SAFETY_CARDS],
     "howto": [],
     "after": [name for name, _, _ in STEPS],
     "next": ["ct-machine.jpg"],
@@ -231,16 +249,34 @@ STROKE_HIDING = ("stroke-dashoffset", "stroke-dasharray")  # прячут лин
 H1_PREV = {"": (60, 66), "@media (max-width: 1199.98px)": (32, 40)}
 H2_SPEC = {"": (40, 44), "@media (max-width: 1199.98px)": (24, 30)}
 
-# ---------------------------------------------------------------- Появление без текста (G23, §11)
-REVEAL_MAX_S = 0.35        # появление картинок и карточек, с
-REVEAL_MAX_SHIFT = 12      # px, сдвиг при появлении
-REVEAL_MIN_MARGIN = 15     # %, rootMargin снизу — срабатывает до того, как элемент дошёл до экрана
+# ---------------------------------------------------------------- Текст без появления (G23, §11)
 HERO_ENTRANCE_MAX_S = 0.6  # въезд первого экрана (кроме логотипа), с
 
-# ---------------------------------------------------------------- Примечание к дозам (G19, §11)
-NOTE_STYLE = {"font-size": "14px", "line-height": "18px"}
-NOTE_MIN_CONTRAST = 4.5    # WCAG AA для мелкого текста: цвет примечания к фону секции (F10)
-MUTED = "#7b8a9d"          # §3: --muted (сам токен не меняется)
+# ---------------------------------------------------------------- Всплывание картинок (G27, §12)
+REVEAL_SHIFT_PX = (24, 32)       # translateY при появлении, px (≈ 28)
+REVEAL_S = (0.6, 0.8)            # длительность всплывания, с (≈ 0,7)
+REVEAL_STEP_MS = (70, 110)       # шаг очереди в ряду, мс (≈ 90)
+REVEAL_MARGIN_PCT = (-15, 0)     # rootMargin снизу, %: срабатывает в экране, а не за его краем
+REVEAL_MAX_THRESHOLD = 0.5       # не позже, чем картинка видна наполовину
+HOVER_LIFT_PX = (4, 6)           # «парящий» подъём при наведении мышью
+# Что всплывает: секция → класс картинки или карточки (элемент без текста, кроме подписей маршрута).
+REVEAL_TARGETS = {"clarify": "gallery__img", "planning": "planning__card", "safety": "dose__media",
+                  "after": "steps__img"}
+
+# ---------------------------------------------------------------- #safety: раскладка и маршрут (G30, G31)
+SAFETY_TEXT_SHARE = (0.35, 0.45)  # десктоп: доля колонки текста (≈ 40 %), карточки — остальное
+SAFETY_CARD_MAX = 480             # px, карточка на десктопе и телефоне не шире
+# Телефон: карточка ≤ 480 px и в столбце, и по 2 в ряд; ряд уже контента — по центру (ревью F11).
+SAFETY_PHONE_WIDTHS = (320, 380, 480, 520, 560, 590, 600, 700, 767)
+# Телефон: столбиком, пока карточка в ряду вышла бы уже ≈ 280 px (подписи маршрута ≥ 12 px не уместились
+# бы в небе над самолётом); дальше — 2 в ряд.
+DOSE_PHONE = {320: 1, 380: 1, 480: 1, 600: 2, 700: 2, 767: 2}
+ROUTE_CLASS = "route"             # блок маршрута поверх картинки; его подписи — часть картинки
+ROUTE_LABEL_MIN_PX = 13           # подпись точки не мельче (ревью F11)
+ROUTE_LABEL_WEIGHT = 600          # и не тоньше
+ROUTE_SKY_PCT = 30                # точки — в верхней части картинки: небо (самолёт начинается ниже 37 %)
+ROUTE_DRAW_S = (0.8, 1.2)         # пунктир «прокладывается» ≈ 1 с
+ROUTE_STROKE = ("#0e294b", "2px")  # --navy, пунктир 2 px
 
 # ---------------------------------------------------------------- Нет кнопок, ссылок и меню (§10.9)
 FORBIDDEN_TAGS = {"a", "button", "nav", "form", "input", "select", "textarea", "iframe", "dialog",
@@ -269,7 +305,7 @@ TABLET_WIDTHS = (768, 1024, 1199)
 DESKTOP_WIDTHS = (1200, 1440, 1710, 1920)
 CONTENT_MAX = 1710
 # Ряды: блок-сетка → колонок на (телефоне, планшете, десктопе); WIDE — пункт на все колонки.
-GRIDS = {"gallery": (2, 4, 4), "howto": (1, 2, 2), "steps": (1, 3, 3), "dose": (2, 2, 2)}
+GRIDS = {"gallery": (2, 4, 4), "howto": (1, 2, 2), "steps": (1, 3, 3), "dose": (DOSE_PHONE, 2, 2)}
 WIDE = {}  # G17: в «Как пройти исследование» 4 пункта — сетка 2×2 без широкого пятого
 
 # ---------------------------------------------------------------- Анимация (G06, таск F5)
@@ -457,7 +493,7 @@ def main():
     check_images(body)
     check_preview(root)
     check_planning_video(body, raw)
-    check_dose_cards(body)
+    check_safety(body)
     check_logo(root, body, raw)
     check_no_controls(root, body, raw)
 
@@ -557,6 +593,7 @@ def check_texts(root, body, raw):
     check("видео" not in raw.replace(VIDEO_LABEL, "").lower(),
           "[2] в index.html упоминание видео вне aria-label ролика в #planning")
     check("ЗАМЕНИТЬ" not in raw, "[2] в index.html остался блок «ЗАМЕНИТЬ» — заглушек в редакции 2 нет")
+    check(DOSE_UNIT not in raw, f"[G29] в index.html осталось «{DOSE_UNIT}» — цифр дозы в редакции 4 нет")
 
     # Подписи иллюстраций — у своих картинок, без номеров «01–04».
     clarify = by_id(body, "clarify")
@@ -803,7 +840,7 @@ def margin_bottom(value):
     """Нижнее поле rootMargin «top right bottom left» (1–4 значения) → (число, «px» или «%»); иначе None."""
     values = value.split()
     bottom = {1: 0, 2: 0, 3: 2, 4: 2}.get(len(values))
-    m = re.fullmatch(r"(\d+(?:\.\d+)?)(px|%)", values[bottom]) if bottom is not None else None
+    m = re.fullmatch(r"(-?\d+(?:\.\d+)?)(px|%)", values[bottom]) if bottom is not None else None
     return (float(m.group(1)), m.group(2)) if m else None
 
 
@@ -820,70 +857,262 @@ def luminance(color):
     return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2]
 
 
-def contrast(fg, bg):
-    """Контраст WCAG двух цветов; None, если цвет не разобрать."""
-    a, b = luminance(fg), luminance(bg)
-    if a is None or b is None:
+# ======================================================================== [G29–G31] #safety
+
+def element_children(node):
+    return [c for c in node.children if isinstance(c, Node)]
+
+
+def track_sizes(template, width, gap):
+    """Ширины колонок grid-template-columns при ширине сетки width и межколоннике gap: колонки в px
+    (и выражения), Nfr и minmax(…, Nfr), repeat(n, …) с числом n. Иначе ValueError."""
+    tracks = []
+    for part in split_top(template, " "):
+        if part.startswith("repeat(") and part.endswith(")"):
+            count, spec = split_top(part[7:-1], ",")
+            if not count.isdigit():
+                raise ValueError(f"repeat({count}, …) — число колонок зависит от ширины")
+            tracks += [spec] * int(count)
+        else:
+            tracks.append(part)
+    fixed, frs = [], []
+    for spec in tracks:
+        high = split_top(spec[7:-1], ",")[1] if spec.startswith("minmax(") and spec.endswith(")") else spec
+        m = re.fullmatch(r"(\d+(?:\.\d+)?)fr", high)
+        fixed.append(None if m else css_length(high, width))
+        frs.append(float(m.group(1)) if m else 0.0)
+    free = width - gap * (len(tracks) - 1) - sum(f for f in fixed if f is not None)
+    total = sum(frs) or 1.0
+    return [f if f is not None else free * fr / total for f, fr in zip(fixed, frs)]
+
+
+def min_font_px(value):
+    """Наименьший кегль: «14px» → 14, «clamp(12px, …, 14px)» → 12, «max(12px, …)» → 12; иначе None."""
+    value = (value or "").strip()
+    if px(value) is not None:
+        return px(value)
+    m = re.fullmatch(r"(clamp|max)\((.*)\)", value)
+    if not m:
         return None
-    return (max(a, b) + 0.05) / (min(a, b) + 0.05)
+    args = split_top(m.group(2), ",")
+    if m.group(1) == "clamp":
+        return px(args[0]) if len(args) == 3 else None
+    known = [px(a) for a in args if px(a) is not None]
+    return max(known) if known else None
 
 
-# ======================================================================== [G19] карточки дозы
+def path_ends(d):
+    """Первая и последняя точки пути SVG «M x y … x y» → ((x0, y0), (x1, y1)); иначе None."""
+    nums = [float(v) for v in re.findall(r"-?\d+(?:\.\d+)?", d or "")]
+    if len(nums) < 4 or not (d or "").strip().upper().startswith("M"):
+        return None
+    return (nums[0], nums[1]), (nums[-2], nums[-1])
 
-def check_dose_cards(body):
-    """§11 (G19): в #safety две карточки-сравнения: картинка, в углу число и «мкЗв», под ней подпись;
-    бейдж — поверх картинки (position: absolute, top и right); примечание 14/18 цветом --muted."""
+
+def pct(value):
+    """«12.5%» → 12.5, иначе None."""
+    m = re.fullmatch(r"(-?\d+(?:\.\d+)?)%", (value or "").strip())
+    return float(m.group(1)) if m else None
+
+
+def check_safety(body):
+    """§12 (G29–G31) с уточнением заказчика (абзацы блока — оба прежних). В #safety два блока: текст
+    (H2 и абзацы) и ряд .dose из двух карточек без чисел — картинка в .dose__media и подпись .dose__caption.
+    На десктопе — две колонки: текст ≈ 40 %, карточки — остальное до правого края контента, карточка
+    ≤ 480 px, по центру колонки по вертикали; на планшете и телефоне — текст сверху (одна колонка).
+    На картинке с самолётом — маршрут .route поверх неё (position: absolute, inset 0): inline SVG
+    (aria-hidden) с пунктиром 2 px цвета --navy и точки с живыми подписями «Москва» (слева) и «Нью-Йорк»
+    (справа) в верхней части картинки (небо), подпись ≥ 12 px; концы линии совпадают с точками.
+    Пунктир прокладывается ≈ 1 с при появлении карточки (.is-in); скрытое до этого — только под
+    html.has-reveal; при «уменьшить движение» — сразу целиком."""
     safety = by_id(body, "safety")
     if safety is None:
         return
+    blocks = by_class(safety, "safety")
     lists = by_class(safety, "dose")
-    if not check(len(lists) == 1, f"[G19] в #safety нужен один ряд карточек .dose, найдено {len(lists)}"):
+    if not check(len(blocks) == 1 and len(lists) == 1,
+                 f"[G31] в #safety нужен один блок .safety и один ряд карточек .dose "
+                 f"(найдено {len(blocks)} и {len(lists)})"):
         return
+    kids = element_children(blocks[0])
+    text_block = kids[0] if kids else None
+    check(len(kids) == 2 and kids[1] is lists[0] and text_block is not lists[0]
+          and any(n.tag == "h2" for n in text_block.iter())
+          and len([n for n in text_block.iter() if n.tag == "p"]) == len(SAFETY_LEADS),
+          f"[G31] .safety: нужны ровно два блока — текст (H2 и {len(SAFETY_LEADS)} абзаца) и ряд карточек .dose")
+
     got = []
-    for item in [c for c in lists[0].children if isinstance(c, Node)]:
+    for item in element_children(lists[0]):
+        media = by_class(item, "dose__media")
         imgs = find_all(item, lambda n: n.tag == "img")
-        nums = by_class(item, "dose__num")
-        units = by_class(item, "dose__unit")
         caps = by_class(item, "dose__caption")
-        badge = by_class(item, "dose__badge")
-        media = imgs[0].parent if imgs else None
-        check(bool(badge) and media is not None and badge[0].parent is media,
-              f"[G19] строка {item.line}: бейдж с числом должен лежать вместе с картинкой (в её блоке)")
-        got.append((basename(imgs[0].attrs.get("src")) if imgs else None,
-                    squash(nums[0].text()) if nums else None,
-                    squash(units[0].text()) if units else None,
-                    squash(caps[0].text()) if caps else None))
-    check(got == DOSE_CARDS, f"[G19] карточки дозы (картинка, число, единица, подпись) {got}, ожидалось {DOSE_CARDS}")
+        check(len(media) == 1 and len(imgs) == 1 and imgs[0].parent is media[0],
+              f"[G29] строка {item.line}: картинка карточки — одна, в блоке .dose__media")
+        got.append((basename(imgs[0].attrs.get("src")) if imgs else None, squash(caps[0].text()) if caps else None))
+    check(got == SAFETY_CARDS, f"[G29] карточки #safety (картинка, подпись) {got}, ожидалось {SAFETY_CARDS}")
+    leftovers = sorted({c for n in safety.iter() for c in n.classes
+                        if c in ("dose__badge", "dose__num", "dose__unit", "safety__note")})
+    check(not leftovers, f"[G29] в #safety остались бейджи с числами или примечание к дозам: {leftovers}")
+
+    # --- G30: маршрут на картинке с самолётом ---
+    routes = by_class(safety, ROUTE_CLASS)
+    if not check(len(routes) == 1, f"[G30] в #safety нужен один маршрут .{ROUTE_CLASS}, найдено {len(routes)}"):
+        return
+    route = routes[0]
+    media = route.parent
+    imgs = [c for c in element_children(media) if c.tag == "img"] if media is not None else []
+    check(media is not None and "dose__media" in media.classes and len(imgs) == 1
+          and basename(imgs[0].attrs.get("src")) == ROUTE_IMAGE,
+          f"[G30] маршрут — поверх картинки {ROUTE_IMAGE}: в её блоке .dose__media рядом с <img>")
+    svgs = [n for n in route.iter() if n.tag == "svg"]
+    paths = [n for svg in svgs for n in svg.iter() if n.tag == "path" and n.attrs.get("d")]
+    if not check(len(svgs) == 1 and len(paths) == 1, "[G30] линия маршрута — один inline <svg> с одним <path>"):
+        return
+    svg, path = svgs[0], paths[0]
+    chain = [svg] + [a for a in svg.ancestors() if a is not route and route in list(a.ancestors())]
+    check(any(n.attrs.get("aria-hidden") == "true" for n in chain),
+          "[G30] дуга маршрута — украшение: у <svg> (или его обёртки) нужно aria-hidden=\"true\"")
+    box = [float(v) for v in (svg.attrs.get("viewbox") or "").replace(",", " ").split()]
+    size = image_size(ROOT / "assets" / "img" / ROUTE_IMAGE)
+    box_ok = check(len(box) == 4 and size is not None and box[2] > 0 and box[3] > 0
+                   and abs((box[2] / box[3]) / (size[0] / size[1]) - 1) <= RATIO_TOLERANCE,
+                   f"[G30] viewBox маршрута {box} не в пропорции картинки {size} — дуга съедет при масштабе")
+    points = by_class(route, "route__point")
+    labels = by_class(route, "route__label")
+    check([squash(n.text()) for n in labels] == list(ROUTE_POINTS),
+          f"[G30] подписи маршрута {[squash(n.text()) for n in labels]}, нужно {list(ROUTE_POINTS)} (слева направо)")
+    check(len(points) == 2 and all(any(lbl in list(p.iter()) for lbl in labels) for p in points),
+          "[G30] у маршрута две точки .route__point, в каждой — своя подпись .route__label")
+    for label in labels:
+        hidden = [n for n in [label, *label.ancestors()] if n.attrs.get("aria-hidden") == "true"]
+        check(not hidden, f"[G30] подпись «{squash(label.text())}» — живой текст: без aria-hidden")
     if not STYLE.is_file():
         return
     css = STYLE.read_text(encoding="utf-8")
     rules = css_rules_media(css)
-    every = ("", TABLET_MEDIA, PHONE_MEDIA)
-    check(cascade(rules, ["dose__badge"], "position", every) == "absolute",
-          "[G19] .dose__badge: нужно position: absolute — число в углу картинки")
-    for prop in ("top", "right"):
-        check(cascade(rules, ["dose__badge"], prop, every) is not None, f"[G19] .dose__badge: не задан {prop}")
-    check(cascade(rules, ["dose__media"], "position", every) == "relative",
-          "[G19] .dose__media: нужно position: relative — бейдж держится за картинку")
-    notes = [n for n in safety.iter() if n.tag == "p" and squash(n.text()) == SAFETY_NOTE]
     tokens = root_tokens(css)
-    if check(len(notes) == 1, "[G19] нет примечания к дозам отдельным абзацем"):
-        note = notes[0]
-        name = " ".join(note.classes) or "без класса"
-        for medias in (("",), ("", TABLET_MEDIA), every):
-            for prop, want in NOTE_STYLE.items():
-                got_value = cascade(rules, note.classes, prop, medias)
-                check(got_value == want, f"[G19] примечание ({name}) {medias[-1] or 'десктоп'}: {prop} {got_value}, "
-                                         f"нужно {want}")
-            # F10: мелкий текст читается — контраст к фону секции ≥ 4,5:1 (у --muted на --bg-gray ≈ 3,2:1).
-            color = resolve(cascade(rules, note.classes, "color", medias), tokens)
-            back = resolve(cascade(rules, safety.classes, "background", medias)
-                           or cascade(rules, safety.classes, "background-color", medias), tokens)
-            ratio = contrast(color, back)
-            check(ratio is not None and ratio >= NOTE_MIN_CONTRAST,
-                  f"[G19] примечание ({name}) {medias[-1] or 'десктоп'}: цвет {color} на фоне {back} — контраст "
-                  f"{ratio and round(ratio, 2)}, нужно ≥ {NOTE_MIN_CONTRAST}:1")
-    check(tokens.get("--muted") == MUTED, f"[G19] в :root нет --muted: {MUTED}")
+    every = ("", TABLET_MEDIA, PHONE_MEDIA)
+    check(cascade(rules, ["dose__media"], "position", every) == "relative",
+          "[G30] .dose__media: нужно position: relative — маршрут держится за картинку")
+    check(cascade(rules, [ROUTE_CLASS], "position", every) == "absolute",
+          f"[G30] .{ROUTE_CLASS}: нужно position: absolute — поверх картинки")
+    sides = [cascade(rules, [ROUTE_CLASS], s, every) for s in ("top", "right", "bottom", "left")]
+    check(cascade(rules, [ROUTE_CLASS], "inset", every) in ("0", "0px") or all(s in ("0", "0px") for s in sides),
+          f"[G30] .{ROUTE_CLASS}: inset 0 — маршрут во всю картинку и масштабируется вместе с ней")
+    stroke = resolve(cascade(rules, path.classes, "stroke", every), tokens)
+    check((stroke or "").lower() == ROUTE_STROKE[0], f"[G30] линия маршрута: stroke {stroke}, нужен --navy")
+    width = cascade(rules, path.classes, "stroke-width", every)
+    check(width == ROUTE_STROKE[1], f"[G30] линия маршрута: stroke-width {width}, нужно {ROUTE_STROKE[1]}")
+    check(cascade(rules, path.classes, "vector-effect", every) == "non-scaling-stroke",
+          "[G30] линия маршрута: vector-effect: non-scaling-stroke — пунктир 2 px при любой ширине картинки")
+    check(cascade(rules, path.classes, "stroke-dasharray", every) not in (None, "none"),
+          "[G30] линия маршрута — пунктир: нужен stroke-dasharray")
+    ends = path_ends(path.attrs.get("d"))
+    spots = []
+    for point in points:
+        mods = [c for c in point.classes if c.startswith("route__point--")]
+        left = pct(cascade(rules, mods, "left", every)) if mods else None
+        top = pct(cascade(rules, mods, "top", every)) if mods else None
+        spots.append((left, top))
+        check(left is not None and top is not None,
+              f"[G30] точка {' '.join(point.classes)}: left и top в % — она должна ехать вместе с картинкой")
+    if len(spots) == 2 and all(v is not None for spot in spots for v in spot):
+        (fx, fy), (tx, ty) = spots
+        check(fx < tx, "[G30] «Москва» — слева, «Нью-Йорк» — справа")
+        check(fy <= ROUTE_SKY_PCT and ty <= ROUTE_SKY_PCT,
+              f"[G30] точки маршрута — в верхней части картинки (небо, top ≤ {ROUTE_SKY_PCT} %), сейчас {fy} и {ty}")
+        if ends and box_ok:
+            for (x, y), (left, top), name in zip(ends, spots, ROUTE_POINTS):
+                check(abs((x - box[0]) / box[2] * 100 - left) <= 1 and abs((y - box[1]) / box[3] * 100 - top) <= 1,
+                      f"[G30] конец линии у «{name}» ({x}, {y}) не совпадает с точкой ({left} %, {top} %)")
+    for medias in (("",), ("", TABLET_MEDIA), every):
+        size_px = min_font_px(cascade(rules, ["route__label"], "font-size", medias))
+        check(size_px is not None and size_px >= ROUTE_LABEL_MIN_PX,
+              f"[G30] подписи маршрута {medias[-1] or 'десктоп'}: кегль {size_px}, нужно ≥ {ROUTE_LABEL_MIN_PX} px")
+        weight = cascade(rules, ["route__label"], "font-weight", medias) or "400"
+        check(weight.isdigit() and int(weight) >= ROUTE_LABEL_WEIGHT,
+              f"[G30] подписи маршрута: font-weight {weight}, нужно ≥ {ROUTE_LABEL_WEIGHT}")
+    # Прокладка пунктира: скрытое — только под .has-reveal, ≈ 1 с, когда маршрут в экране (main.js);
+    # «уменьшить движение» — сразу.
+    drawn = []
+    for media, sel, d in rules:
+        if ".route" not in sel or media.startswith("@keyframes") or media == "@media print" \
+                or REDUCED_MOTION in media:
+            continue
+        hides = d.get("opacity") == "0" or re.search(r"translatex\(-?100%\)", d.get("transform") or "")
+        if hides:
+            check(all(f".{REVEAL_GATE}" in part for part in sel.split(",")),
+                  f"[G30] «{sel}» прячет маршрут без класса .{REVEAL_GATE} — без JS он не будет виден")
+        if d.get("transition"):
+            drawn += [t for part in split_top(d["transition"], ",")
+                      for t in [t for t in (time_s(tok) for tok in split_top(part, " ")) if t is not None][:1]]
+    low, high = ROUTE_DRAW_S
+    check(any(low <= t <= high for t in drawn),
+          f"[G30] пунктир прокладывается при появлении карточки ≈ 1 с ({low}–{high} с) — найдено {drawn}")
+    check(any(".route" in sel and d.get("transform") == "none" for media, sel, d in rules if REDUCED_MOTION in media),
+          f"[G30] @media ({REDUCED_MOTION}): маршрут сразу целиком (.route… transform: none)")
+
+    # --- G31: раскладка ---
+    desk = ("",)
+    template = cascade(rules, ["safety"], "grid-template-columns", desk) or ""
+    check(cascade(rules, ["safety"], "display", desk) == "grid" and bool(template),
+          "[G31] .safety на десктопе: display: grid с двумя колонками (текст и карточки)")
+    check(cascade(rules, ["safety"], "align-items", desk) == "center",
+          "[G31] .safety на десктопе: align-items: center — карточки по центру колонки по вертикали")
+    gap = column_gap(rules, ["safety"], desk)
+    dose_gap = column_gap(rules, ["dose"], desk)
+    pad = (px(cascade(rules, ["container"], "padding-left", desk)) or 0.0) + \
+          (px(cascade(rules, ["container"], "padding-right", desk)) or 0.0)
+    low, high = SAFETY_TEXT_SHARE
+    for screen in DESKTOP_WIDTHS if template else ():
+        width = min(screen, CONTENT_MAX) - pad
+        try:
+            sizes = track_sizes(template, width, gap)
+        except ValueError as err:
+            fail(f"[G31] .safety: grid-template-columns «{template}» не разобрать — {err}")
+            break
+        if not check(len(sizes) == 2, f"[G31] .safety на десктопе: {len(sizes)} колонок, нужно 2"):
+            break
+        share = sizes[0] / sum(sizes)
+        check(low <= share <= high, f"[G31] десктоп {screen} px: колонка текста {share:.0%} ширины, нужно ≈ 40 %")
+        card = (sizes[1] - dose_gap) / 2
+        check(card <= SAFETY_CARD_MAX + 0.5,
+              f"[G31] десктоп {screen} px: карточка {card:.0f} px — не шире {SAFETY_CARD_MAX}")
+    for medias in (desk, ("", TABLET_MEDIA), every):
+        where = medias[-1] or "десктоп"
+        check(cascade(rules, ["dose"], "max-width", medias) in (None, "none"),
+              f"[G31] .dose {where}: max-width — справа от карточек останется пусто")
+        check(cascade(rules, ["dose"], "width", medias) in (None, "auto", "100%"),
+              f"[G31] .dose {where}: ширина не на всю колонку")
+        check(cascade(rules, ["dose"], "justify-self", medias) in (None, "auto", "stretch"),
+              f"[G31] .dose {where}: justify-self сжимает ряд карточек")
+    for medias, where in ((("", TABLET_MEDIA), "планшет"), (every, "телефон")):
+        display = cascade(rules, ["safety"], "display", medias)
+        narrow = cascade(rules, ["safety"], "grid-template-columns", medias) or ""
+        try:
+            single = display != "grid" or (bool(narrow) and len(track_sizes(narrow, 700, 0)) == 1)
+        except ValueError:
+            single = False
+        check(single, f"[G31] .safety {where}: текст сверху, карточки под ним — одна колонка")
+    # Телефон (ревью F11): карточка не шире 480 px и в столбце, и по 2 в ряд; ряд уже контента — по центру.
+    phone_template = cascade(rules, ["dose"], "grid-template-columns", every) or ""
+    phone_gap = column_gap(rules, ["dose"], every)
+    phone_pad = (px(cascade(rules, ["container"], "padding-left", every)) or 0.0) + \
+                (px(cascade(rules, ["container"], "padding-right", every)) or 0.0)
+    centered = cascade(rules, ["dose"], "justify-content", every) == "center"
+    for screen in SAFETY_PHONE_WIDTHS if phone_template else ():
+        width = screen - phone_pad
+        try:
+            columns = grid_columns(phone_template, width, phone_gap)
+        except ValueError as err:
+            fail(f"[G31] .dose на телефоне: «{phone_template}» не разобрать — {err}")
+            break
+        share = (width - phone_gap * (len(columns) - 1)) / len(columns)
+        sizes = [share if high is None else min(high, max(low, share)) for low, high in columns]
+        check(max(sizes) <= SAFETY_CARD_MAX + 0.5,
+              f"[G31] телефон {screen} px: карточка {max(sizes):.0f} px — не шире {SAFETY_CARD_MAX}")
+        if sum(sizes) + phone_gap * (len(sizes) - 1) < width - 0.5:
+            check(centered, f"[G31] телефон {screen} px: ряд карточек уже контента — нужен justify-content: center")
 
 
 # ======================================================================== [G20] логотип
@@ -986,7 +1215,7 @@ def check_logo(root, body, raw):
     for media, sel, decls in rules:
         if REDUCED_MOTION in media or media.startswith("@keyframes"):
             continue
-        if any(prop in decls for prop in STROKE_HIDING):
+        if ".logo" in sel and any(prop in decls for prop in STROKE_HIDING):  # пунктир маршрута (G30) — не логотип
             check(all(f".{LOGO_GATE}" in part for part in sel.split(",")),
                   f"[G20] «{sel}» прячет линии знака без класса .{LOGO_GATE} — без JS логотип не будет виден")
     gated = [sel for _, sel, _ in rules if f".{LOGO_GATE}" in sel]
@@ -1321,10 +1550,12 @@ def check_layout(body):
                     fail(f"[G15] .{block}: grid-template-columns «{template}» не разобрать — {err}")
                     break
                 count = len(columns)
-                if not check(count == counts[idx], f"[G15] {label} {screen} px, .{block}: {count} в ряд, "
-                                                   f"нужно {counts[idx]}"):
+                want = counts[idx][screen] if isinstance(counts[idx], dict) else counts[idx]
+                if not check(count == want, f"[G15] {label} {screen} px, .{block}: {count} в ряд, нужно {want}"):
                     break
-                check(all(high is None for _, high in columns),
+                # Колонки с потолком в px допустимы, только если ряд по центру (#safety на телефоне, ревью F11).
+                centered = cascade(rules, [block], "justify-content", medias) == "center"
+                check(all(high is None for _, high in columns) or centered,
                       f"[G15] {label} {screen} px, .{block}: колонки не fr — справа останется пусто")
                 spans_all = span in ("1 / -1", "1/-1", f"span {count}")
                 cells = len(items) - len(wide_items) + len(wide_items) * (count if spans_all else 1)
@@ -1422,7 +1653,7 @@ def check_hero_title():
             check(phone == want_size, f"[G21] .hero__title на телефоне: font-size {phone}, нужно {want_size}px")
 
 
-# ======================================================================== [G23] текст без появления
+# ======================================================================== [G23, G27] текст без появления, всплывание картинок
 
 def time_s(token):
     """«0.25s» / «250ms» → секунды; иначе None."""
@@ -1438,17 +1669,31 @@ def subject_classes(selector_part):
     return set(re.findall(r"\.([\w-]+)", re.sub(r"::?[\w-]+(\([^)]*\))?", "", last)))
 
 
+def text_outside_pictures(node):
+    """Видимый текст узла без подписей маршрута — они часть картинки и появляются вместе с ней (G30)."""
+    if isinstance(node, str):
+        return node
+    if node.tag in HIDDEN_TAGS or "hidden" in node.attrs or ROUTE_CLASS in node.classes:
+        return ""
+    sep = "" if node.tag in INLINE_TAGS else " "
+    return sep + "".join(text_outside_pictures(c) for c in node.children) + sep
+
+
 def check_text_motion(body):
-    """§11 (G23): у текста анимации появления нет совсем. CSS-анимации (animation) и появление из main.js
-    касаются только элементов без текста (картинки, карточки, логотип); появление ≤ 0,35 с и сдвиг ≤ 12 px,
-    срабатывает заранее — rootMargin снизу ≥ 15 %; въезд первого экрана ≤ 0,6 с."""
+    """§11 (G23): у текста анимации появления нет совсем — CSS-анимации (animation) и появление из main.js
+    касаются только элементов без текста (картинки, карточки, логотип; подписи маршрута — часть картинки);
+    въезд первого экрана ≤ 0,6 с. §12 (G27): картинки и карточки #clarify, #safety, #after и карточка
+    #planning заметно всплывают — opacity 0 → 1 и translateY ≈ 28 px → 0 за ≈ 0,7 с, в ряду по очереди
+    (шаг ≈ 90 мс); срабатывает в зоне видимости: rootMargin снизу от −15 % до 0, порог ≤ 0,5 — не за краем
+    экрана; при наведении мышью — подъём 4–6 px."""
     if not STYLE.is_file():
         return
 
     def with_text(classes):
-        return [n for n in body.iter() if classes and classes <= set(n.classes) and squash(n.text())]
+        return [n for n in body.iter() if classes and classes <= set(n.classes) and squash(text_outside_pictures(n))]
 
     rules = css_rules_media(STYLE.read_text(encoding="utf-8"))
+    hidden_state = shown_state = False
     for media, sel, d in rules:
         if REDUCED_MOTION in media or media == "@media print" or media.startswith("@keyframes"):
             continue
@@ -1462,17 +1707,55 @@ def check_text_motion(body):
                     times = [t for t in (time_s(tok) for tok in split_top(anim, " ")) if t is not None]
                     check(sum(times[:2]) <= HERO_ENTRANCE_MAX_S + 1e-9,
                           f"[G23] «{part.strip()}»: въезд первого экрана {sum(times[:2]):.2f} с, нужно ≤ {HERO_ENTRANCE_MAX_S} с")
-        if f".{REVEAL_GATE}" in sel:
-            shift = re.search(r"translatey\((-?\d+(?:\.\d+)?)px\)", d.get("transform") or "")
-            if shift:
-                check(abs(float(shift.group(1))) <= REVEAL_MAX_SHIFT,
-                      f"[G23] «{sel}»: сдвиг при появлении {shift.group(1)}px, нужно ≤ {REVEAL_MAX_SHIFT}px")
-            check("translatex" not in (d.get("transform") or "") and "scale" not in (d.get("transform") or ""),
-                  f"[G23] «{sel}»: при появлении только короткий сдвиг по вертикали")
-            for part in split_top(d.get("transition") or "", ","):
-                times = [t for t in (time_s(tok) for tok in split_top(part, " ")) if t is not None]
-                if times:
-                    check(times[0] <= REVEAL_MAX_S, f"[G23] «{sel}»: появление {times[0]} с, нужно ≤ {REVEAL_MAX_S} с")
+        if f".{REVEAL_GATE}" not in sel:
+            continue
+        for part in sel.split(","):
+            subject = subject_classes(part)
+            if "reveal" not in subject:
+                continue  # маршрут внутри карточки проверяет check_safety
+            transform = d.get("transform") or ""
+            where = f"[G27] «{part.strip()}»"
+            if "is-in" not in subject:
+                hidden_state = True
+                low, high = REVEAL_SHIFT_PX
+                shift = re.search(r"translatey\((-?\d+(?:\.\d+)?)px\)", transform)
+                if check(shift is not None, f"{where}: картинка всплывает снизу — нужен translateY({low}–{high}px)"):
+                    check(low <= float(shift.group(1)) <= high,
+                          f"{where}: сдвиг при всплывании {shift.group(1)}px, нужно {low}–{high}px")
+                check("translatex" not in transform and "scale" not in transform,
+                      f"{where}: при всплывании только сдвиг по вертикали")
+                check(d.get("opacity") == "0", f"{where}: до появления картинка прозрачна (opacity: 0)")
+            elif d.get("transition"):
+                shown_state = True
+                low, high = REVEAL_S
+                for item in split_top(d["transition"], ","):
+                    times = [t for t in (time_s(tok) for tok in split_top(item, " ")) if t is not None]
+                    check(bool(times) and low <= times[0] <= high,
+                          f"{where}: всплывание {times[0] if times else '?'} с, нужно {low}–{high} с")
+    check(hidden_state and shown_state,
+          f"[G27] в style.css нет пары «.{REVEAL_GATE} .reveal» (скрыто, сдвиг вниз) и «.reveal.is-in» (переход)")
+
+    # Наведение мышью: картинка или её карточка «парит» — подъём 4–6 px.
+    lifts = {}
+    for media, sel, d in rules:
+        shift = re.search(r"translatey\((-?\d+(?:\.\d+)?)px\)", d.get("transform") or "")
+        if media != "@media (hover: hover)" or not shift:
+            continue
+        for part in sel.split(","):
+            last = part.strip().split()[-1] if part.strip() else ""
+            if last.endswith(":hover"):
+                for cls in re.findall(r"\.([\w-]+)", last):
+                    lifts[cls] = abs(float(shift.group(1)))
+    low, high = HOVER_LIFT_PX
+    for sid, cls in REVEAL_TARGETS.items():
+        section = by_id(body, sid)
+        nodes = by_class(section, cls) if section is not None else []
+        check(bool(nodes), f"[G27] в #{sid} нет .{cls} — нечему всплывать")
+        for node in nodes:
+            got = [lifts[c] for n in [node, *node.ancestors()] for c in n.classes if c in lifts][:1]
+            check(bool(got) and low <= got[0] <= high,
+                  f"[G27] #{sid} .{cls} (строка {node.line}): при наведении мышью — подъём {low}–{high} px, сейчас {got}")
+
     if not check(SCRIPT.is_file(), "[G23] нет main.js"):
         return
     js = re.sub(r"/\*.*?\*/|(?<![:\w])//[^\n]*", "", SCRIPT.read_text(encoding="utf-8"), flags=re.S)
@@ -1484,13 +1767,28 @@ def check_text_motion(body):
         hits = with_text({cls})
         check(not hits, f"[G23] main.js работает с .{cls}, а в нём текст (строка {hits[0].line if hits else ''}) — "
                         "появление при прокрутке только у картинок и карточек")
+    for sid, cls in REVEAL_TARGETS.items():
+        check(cls in touched, f"[G27] main.js не показывает .{cls} при прокрутке — картинки #{sid} не всплывают")
+    step = re.search(r"\bSTEP\s*=\s*(\d+)", js)
+    low, high = REVEAL_STEP_MS
+    check(bool(step) and low <= int(step.group(1)) <= high,
+          f"[G27] main.js: шаг очереди в ряду (STEP) {step and step.group(1)} мс, нужно {low}–{high} мс")
     # Появление — rootMargin в долях экрана; поле загрузки ролика в px (F10) проверяет check_planning_video.
     margins = root_margins(js)
     reveal = [(v, margin_bottom(v)) for v in margins if (margin_bottom(v) or (0, ""))[1] != "px"]
-    if check(len(reveal) == 1, f"[G23] main.js: нужен один rootMargin появления (в %), найдено {[v for v, _ in reveal]}"):
+    low, high = REVEAL_MARGIN_PCT
+    if check(len(reveal) == 1, f"[G27] main.js: нужен один rootMargin появления (в %), найдено {[v for v, _ in reveal]}"):
         value, bottom = reveal[0]
-        check(bool(bottom) and bottom[0] >= REVEAL_MIN_MARGIN,
-              f"[G23] main.js: rootMargin «{value}» — снизу нужно ≥ {REVEAL_MIN_MARGIN}% (срабатывать заранее)")
+        check(bool(bottom) and low <= bottom[0] <= high,
+              f"[G27] main.js: rootMargin «{value}» — снизу нужно от {low}% до {high}%: картинка всплывает в экране, "
+              "а не за его краем")
+    # Порог — у наблюдателя всплывания (его параметры — объект с rootMargin в %); у маршрута свой (G30).
+    options = [o for o in re.findall(r"\{[^{}]*rootMargin[^{}]*\}", js)
+               if (margin_bottom((root_margins(o) or [""])[0]) or (0, ""))[1] == "%"]
+    thresholds = [float(v) for o in options for group in re.findall(r"threshold\s*:\s*\[?([\d.,\s]+)\]?", o)
+                  for v in re.findall(r"\d*\.?\d+", group)]
+    check(len(options) == 1 and all(t <= REVEAL_MAX_THRESHOLD for t in thresholds),
+          f"[G27] main.js: threshold всплывания {thresholds} — не позже, чем картинка видна наполовину")
 
 
 # ======================================================================== README
@@ -1504,6 +1802,8 @@ def check_readme():
         check(anchor not in text, f"[README] осталась заглушка {anchor}")
     for needle in ("tools/check_site.py", FONT_NAME, "Пикассо", "assets/video/"):  # F10: README — о ролике тоже
         check(needle in text, f"[README] нет «{needle}»")
+    for figure in (DOSE_UNIT, "20–200", "50–80", "8 мкЗв"):  # G29: цифр дозы на странице больше нет
+        check(figure not in text, f"[README] устаревшее упоминание цифр дозы «{figure}»")
 
 
 def report():
